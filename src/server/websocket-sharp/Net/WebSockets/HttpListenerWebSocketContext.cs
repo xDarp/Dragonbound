@@ -1,4 +1,4 @@
-#region MIT License
+#region License
 /*
  * HttpListenerWebSocketContext.cs
  *
@@ -40,36 +40,30 @@ namespace WebSocketSharp.Net.WebSockets {
   /// </remarks>
   public class HttpListenerWebSocketContext : WebSocketContext
   {
-    #region Fields
+    #region Private Fields
 
     private HttpListenerContext _context;
-    private WebSocket           _socket;
-    private WsStream            _stream;
+    private WebSocket           _websocket;
+    private WsStream            _wsStream;
 
     #endregion
 
-    #region Constructor
+    #region Internal Constructors
 
     internal HttpListenerWebSocketContext(HttpListenerContext context)
     {
-      _context = context;
-      _stream  = WsStream.CreateServerStream(context);
-      _socket  = new WebSocket(this);
+      _context   = context;
+      _wsStream  = WsStream.CreateServerStream(context);
+      _websocket = new WebSocket(this);
     }
 
     #endregion
 
     #region Internal Properties
 
-    internal HttpListenerContext BaseContext {
-      get {
-        return _context;
-      }
-    }
-
     internal WsStream Stream {
       get {
-        return _stream;
+        return _wsStream;
       }
     }
 
@@ -138,6 +132,22 @@ namespace WebSocketSharp.Net.WebSockets {
     }
 
     /// <summary>
+    /// Gets a value indicating whether the WebSocket connection request is valid.
+    /// </summary>
+    /// <value>
+    /// <c>true</c> if the WebSocket connection request is valid; otherwise, <c>false</c>.
+    /// </value>
+    public override bool IsValid {
+      get {
+        return !_context.Request.IsWebSocketRequest
+               ? false
+               : SecWebSocketKey.IsNullOrEmpty()
+                 ? false
+                 : !SecWebSocketVersion.IsNullOrEmpty();
+      }
+    }
+
+    /// <summary>
     /// Gets the value of the Origin header field used in the WebSocket opening handshake.
     /// </summary>
     /// <value>
@@ -153,11 +163,23 @@ namespace WebSocketSharp.Net.WebSockets {
     /// Gets the absolute path of the requested WebSocket URI.
     /// </summary>
     /// <value>
-    /// A <see cref="string"/> that contains the absolute path.
+    /// A <see cref="string"/> that contains the absolute path of the requested WebSocket URI.
     /// </value>
-    public virtual string Path {
+    public override string Path {
       get {
         return RequestUri.GetAbsolutePath();
+      }
+    }
+
+    /// <summary>
+    /// Gets the collection of query string variables used in the WebSocket opening handshake.
+    /// </summary>
+    /// <value>
+    /// A <see cref="NameValueCollection"/> that contains the collection of query string variables.
+    /// </value>
+    public override NameValueCollection QueryString {
+      get {
+        return _context.Request.QueryString;
       }
     }
 
@@ -234,7 +256,7 @@ namespace WebSocketSharp.Net.WebSockets {
     /// Gets the client information (identity, authentication information and security roles).
     /// </summary>
     /// <value>
-    /// An <see cref="IPrincipal"/> that contains the client information.
+    /// A <see cref="IPrincipal"/> that contains the client information.
     /// </value>
     public override IPrincipal User {
       get {
@@ -262,8 +284,17 @@ namespace WebSocketSharp.Net.WebSockets {
     /// </value>
     public override WebSocket WebSocket {
       get {
-        return _socket;
+        return _websocket;
       }
+    }
+
+    #endregion
+
+    #region Internal Methods
+
+    internal void Close()
+    {
+      _context.Connection.Close(true);
     }
 
     #endregion

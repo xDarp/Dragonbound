@@ -1,4 +1,4 @@
-#region MIT License
+#region License
 /*
  * WebSocketServerBase.cs
  *
@@ -43,26 +43,27 @@ namespace WebSocketSharp.Server {
   /// </remarks>
   public abstract class WebSocketServerBase {
 
-    #region Fields
+    #region Private Fields
 
-    private Thread      _receiveRequestThread;
     private IPAddress   _address;
-    private bool        _isSecure;
-    private bool        _isSelfHost;
+    private bool        _listening;
     private int         _port;
+    private Thread      _receiveRequestThread;
+    private bool        _secure;
+    private bool        _selfHost;
     private TcpListener _tcpListener;
     private Uri         _uri;
 
     #endregion
 
-    #region Constructors
+    #region Protected Constructors
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WebSocketServerBase"/> class.
     /// </summary>
     protected WebSocketServerBase()
     {
-      _isSelfHost = false;
+      _selfHost = false;
     }
 
     /// <summary>
@@ -96,7 +97,7 @@ namespace WebSocketSharp.Server {
     /// on the specified <paramref name="address"/>, <paramref name="port"/>, <paramref name="absPath"/> and <paramref name="secure"/>.
     /// </summary>
     /// <param name="address">
-    /// A <see cref="IPAddress"/> that contains an IP address.
+    /// A <see cref="IPAddress"/> that contains a local IP address.
     /// </param>
     /// <param name="port">
     /// An <see cref="int"/> that contains a port number. 
@@ -133,7 +134,7 @@ namespace WebSocketSharp.Server {
       if (!absPath.IsValidAbsolutePath(out msg))
         throw new ArgumentException(msg, "absPath");
 
-      if ((port == 80  && secure) ||
+      if ((port == 80 && secure) ||
           (port == 443 && !secure))
       {
         msg = String.Format(
@@ -141,19 +142,17 @@ namespace WebSocketSharp.Server {
         throw new ArgumentException(msg);
       }
 
-      _address  = address;
-      _port     = port > 0
-                ? port
-                : secure ? 443 : 80;
-      _uri      = absPath.ToUri();
-      _isSecure = secure;
+      _address = address;
+      _port = port > 0 ? port : secure ? 443 : 80;
+      _uri = absPath.ToUri();
+      _secure = secure;
 
       init();
     }
 
     #endregion
 
-    #region Protected Property
+    #region Protected Properties
 
     /// <summary>
     /// Gets or sets the WebSocket URL on which to listen for incoming connection attempts.
@@ -161,8 +160,7 @@ namespace WebSocketSharp.Server {
     /// <value>
     /// A <see cref="Uri"/> that contains a WebSocket URL.
     /// </value>
-    protected Uri BaseUri
-    {
+    protected Uri BaseUri {
       get {
         return _uri;
       }
@@ -177,10 +175,10 @@ namespace WebSocketSharp.Server {
     #region Public Properties
 
     /// <summary>
-    /// Gets the IP address on which to listen for incoming connection attempts.
+    /// Gets the local IP address on which to listen for incoming connection attempts.
     /// </summary>
     /// <value>
-    /// A <see cref="IPAddress"/> that contains an IP address.
+    /// A <see cref="IPAddress"/> that contains a local IP address.
     /// </value>
     public IPAddress Address {
       get {
@@ -189,26 +187,38 @@ namespace WebSocketSharp.Server {
     }
 
     /// <summary>
-    /// Gets a value indicating whether this server provides secure connection.
+    /// Gets a value indicating whether the server has been started.
     /// </summary>
     /// <value>
-    /// <c>true</c> if this server provides secure connection; otherwise, <c>false</c>.
+    /// <c>true</c> if the server has been started; otherwise, <c>false</c>.
     /// </value>
-    public bool IsSecure {
+    public bool IsListening {
       get {
-        return _isSecure;
+        return _listening;
       }
     }
 
     /// <summary>
-    /// Gets a value indicating whether this server is self host.
+    /// Gets a value indicating whether the server provides secure connection.
     /// </summary>
     /// <value>
-    /// <c>true</c> if this server is self host; otherwise, <c>false</c>.
+    /// <c>true</c> if the server provides secure connection; otherwise, <c>false</c>.
+    /// </value>
+    public bool IsSecure {
+      get {
+        return _secure;
+      }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the server is self host.
+    /// </summary>
+    /// <value>
+    /// <c>true</c> if the server is self host; otherwise, <c>false</c>.
     /// </value>
     public bool IsSelfHost {
       get {
-        return _isSelfHost;
+        return _selfHost;
       }
     }
 
@@ -226,10 +236,10 @@ namespace WebSocketSharp.Server {
 
     #endregion
 
-    #region Event
+    #region Public Events
 
     /// <summary>
-    /// Occurs when this server gets an error.
+    /// Occurs when the server gets an error.
     /// </summary>
     public event EventHandler<ErrorEventArgs> OnError;
 
@@ -237,7 +247,38 @@ namespace WebSocketSharp.Server {
 
     #region Private Methods
 
-    private void acceptWebSocketAsync(TcpListenerWebSocketContext context)
+    private void init()
+    {
+      _listening = false;
+      _selfHost = true;
+      _tcpListener = new TcpListener(_address, _port);
+    }
+
+    private void init(Uri uri)
+    {
+      var scheme = uri.Scheme;
+      var host = uri.DnsSafeHost;
+      var port = uri.Port;
+      var addrs = Dns.GetHostAddresses(host);
+
+      _uri = uri;
+      _address = addrs[0];
+      _secure = scheme == "wss" ? true : false;
+      _port = port > 0 ? port : _secure ? 443 : 80;
+      init();
+    }
+
+    private void onError(string message)
+    {
+      #if DEBUG
+      var callerFrame = new StackFrame(1);
+      var caller = callerFrame.GetMethod();
+      Console.WriteLine("WSSV: Error@{0}: {1}", caller.Name, message);
+      #endif
+      OnError.Emit(this, new ErrorEventArgs(message));
+    }
+
+    private void processRequestAsync(TcpListenerWebSocketContext context)
     {
       WaitCallback callback = (state) =>
       {
@@ -254,47 +295,14 @@ namespace WebSocketSharp.Server {
       ThreadPool.QueueUserWorkItem(callback);
     }
 
-    private void init()
-    {
-      _tcpListener = new TcpListener(_address, _port);
-      _isSelfHost  = true;
-    }
-
-    private void init(Uri uri)
-    {
-      var scheme = uri.Scheme;
-      var host   = uri.DnsSafeHost;
-      var port   = uri.Port;
-      var addrs  = Dns.GetHostAddresses(host);
-
-      _uri      = uri;
-      _address  = addrs[0];
-      _isSecure = scheme == "wss" ? true : false;
-      _port     = port > 0
-                  ? port
-                  : _isSecure ? 443 : 80;
-
-      init();
-    }
-
-    private void onError(string message)
-    {
-      #if DEBUG
-      var callerFrame = new StackFrame(1);
-      var caller      = callerFrame.GetMethod();
-      Console.WriteLine("WSSV: Error@{0}: {1}", caller.Name, message);
-      #endif
-      OnError.Emit(this, new ErrorEventArgs(message));
-    }
-
     private void receiveRequest()
     {
       while (true)
       {
         try
         {
-          var context = _tcpListener.AcceptWebSocket(_isSecure);
-          acceptWebSocketAsync(context);
+          var context = _tcpListener.AcceptWebSocket(_secure);
+          processRequestAsync(context);
         }
         catch (SocketException)
         {
@@ -323,8 +331,9 @@ namespace WebSocketSharp.Server {
 
       if (!result.Query.IsNullOrEmpty())
       {
-        result  = null;
+        result = null;
         message = "Must not contain the query component: " + uriString;
+
         return false;
       }
 
@@ -336,10 +345,10 @@ namespace WebSocketSharp.Server {
     #region Protected Methods
 
     /// <summary>
-    /// Accepts a WebSocket connection.
+    /// Accepts a WebSocket connection request.
     /// </summary>
     /// <param name="context">
-    /// A <see cref="TcpListenerWebSocketContext"/> that contains a WebSocket connection.
+    /// A <see cref="TcpListenerWebSocketContext"/> that contains the WebSocket connection request objects.
     /// </param>
     protected abstract void AcceptWebSocket(TcpListenerWebSocketContext context);
 
@@ -363,11 +372,12 @@ namespace WebSocketSharp.Server {
     /// </summary>
     public virtual void Start()
     {
-      if (!_isSelfHost)
+      if (!_selfHost || _listening)
         return;
 
       _tcpListener.Start();
       startReceiveRequestThread();
+      _listening = true;
     }
 
     /// <summary>
@@ -375,11 +385,12 @@ namespace WebSocketSharp.Server {
     /// </summary>
     public virtual void Stop()
     {
-      if (!_isSelfHost)
+      if (!_selfHost || !_listening)
         return;
 
       _tcpListener.Stop();
       _receiveRequestThread.Join(5 * 1000);
+      _listening = false;
     }
 
     #endregion

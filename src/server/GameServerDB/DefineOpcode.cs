@@ -47,7 +47,9 @@ namespace GameServerDB
         player_left = 36,
         enter_room = 37,
         pass_master = 38,
-        extra_room_info = 39
+        extra_room_info = 39,
+        alert2 = 40,
+        tournament_wait = 41
     }
 
     enum ClientOpcode
@@ -75,7 +77,7 @@ namespace GameServerDB
         quick_join = 20,
         room_title = 21,
         select_bot = 22,
-        event_d = 23,
+        xevent = 23,
         addfriend = 24,
         guildinvite = 25,
         friend_approved = 26,
@@ -92,6 +94,8 @@ namespace GameServerDB
         guildres = 37,
         get_room_info = 38,
         refresh_friends = 39,
-        refresh_guildies = 40
+        refresh_guildies = 40,
+        tournament_start_game = 41,
+        tournament_cancel_wait = 42
     }
 }

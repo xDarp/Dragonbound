@@ -1,4 +1,4 @@
-#region MIT License
+#region License
 /*
  * WebSocketServer.cs
  *
@@ -44,9 +44,9 @@ namespace WebSocketSharp.Server {
   /// </remarks>
   public class WebSocketServer : WebSocketServerBase
   {
-    #region Field
+    #region Private Fields
 
-    private ServiceManager _services;
+    private ServiceHostManager _svcHosts;
 
     #endregion
 
@@ -88,7 +88,7 @@ namespace WebSocketSharp.Server {
         throw new ArgumentException(msg, "url");
       }
 
-      init();
+      _svcHosts = new ServiceHostManager();
     }
 
     /// <summary>
@@ -111,7 +111,7 @@ namespace WebSocketSharp.Server {
     /// on the specified <paramref name="address"/> and <paramref name="port"/>.
     /// </summary>
     /// <param name="address">
-    /// A <see cref="System.Net.IPAddress"/> that contains an IP address.
+    /// A <see cref="System.Net.IPAddress"/> that contains a local IP address.
     /// </param>
     /// <param name="port">
     /// An <see cref="int"/> that contains a port number. 
@@ -126,7 +126,7 @@ namespace WebSocketSharp.Server {
     /// on the specified <paramref name="address"/>, <paramref name="port"/> and <paramref name="secure"/>.
     /// </summary>
     /// <param name="address">
-    /// A <see cref="System.Net.IPAddress"/> that contains an IP address.
+    /// A <see cref="System.Net.IPAddress"/> that contains a local IP address.
     /// </param>
     /// <param name="port">
     /// An <see cref="int"/> that contains a port number. 
@@ -137,80 +137,74 @@ namespace WebSocketSharp.Server {
     public WebSocketServer(System.Net.IPAddress address, int port, bool secure)
       : base(address, port, "/", secure)
     {
-      init();
+      _svcHosts = new ServiceHostManager();
     }
 
     #endregion
 
-    #region Properties
+    #region Public Properties
 
     /// <summary>
-    /// Gets the paths associated with the each WebSocket services.
+    /// Gets the collection of paths associated with the every WebSocket services that the server provides.
     /// </summary>
     /// <value>
-    /// An IEnumerable&lt;string&gt; that contains the paths.
+    /// An IEnumerable&lt;string&gt; that contains the collection of paths.
     /// </value>
     public IEnumerable<string> ServicePaths {
       get {
         var url = BaseUri.IsAbsoluteUri
                 ? BaseUri.ToString().TrimEnd('/')
                 : String.Empty;
-        foreach (var path in _services.Path)
+
+        foreach (var path in _svcHosts.Paths)
           yield return url + path;
       }
     }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the server cleans up the inactive client.
+    /// Gets or sets a value indicating whether the server cleans up the inactive WebSocket service
+    /// instances periodically.
     /// </summary>
     /// <value>
-    /// <c>true</c> if the server cleans up the inactive client; otherwise, <c>false</c>.
+    /// <c>true</c> if the server cleans up the inactive WebSocket service instances every 60 seconds;
+    /// otherwise, <c>false</c>. The default value is <c>true</c>.
     /// </value>
-    public bool Sweeped {
+    public bool Sweeping {
       get {
-        return _services.Sweeped;
+        return _svcHosts.Sweeping;
       }
 
       set {
-        _services.Sweeped = value;
+        _svcHosts.Sweeping = value;
       }
     }
 
     #endregion
 
-    #region Private Method
-
-    private void init()
-    {
-      _services = new ServiceManager();
-    }
-
-    #endregion
-
-    #region Protected Method
+    #region Protected Methods
 
     /// <summary>
-    /// Accepts a WebSocket connection.
+    /// Accepts a WebSocket connection request.
     /// </summary>
     /// <param name="context">
-    /// A <see cref="TcpListenerWebSocketContext"/> that contains a WebSocket connection.
+    /// A <see cref="TcpListenerWebSocketContext"/> that contains the WebSocket connection request objects.
     /// </param>
     protected override void AcceptWebSocket(TcpListenerWebSocketContext context)
     {
-      var socket = context.WebSocket;
-      var path   = context.Path.UrlDecode();
+      var ws = context.WebSocket;
+      var path = context.Path.UrlDecode();
 
       IServiceHost svcHost;
-      if (!_services.TryGetServiceHost(path, out svcHost))
+      if (!_svcHosts.TryGetServiceHost(path, out svcHost))
       {
-        socket.Close(HttpStatusCode.NotImplemented);
+        ws.Close(HttpStatusCode.NotImplemented);
         return;
       }
 
       if (BaseUri.IsAbsoluteUri)
-        socket.Url = new Uri(BaseUri, path);
+        ws.Url = new Uri(BaseUri, path);
 
-      svcHost.BindWebSocket(socket);
+      svcHost.BindWebSocket(context);
     }
 
     #endregion
@@ -218,15 +212,15 @@ namespace WebSocketSharp.Server {
     #region Public Methods
 
     /// <summary>
-    /// Adds a WebSocket service.
+    /// Adds the specified type WebSocket service.
     /// </summary>
     /// <param name="absPath">
-    /// A <see cref="string"/> that contains an absolute path associated with a WebSocket service.
+    /// A <see cref="string"/> that contains an absolute path associated with the WebSocket service.
     /// </param>
     /// <typeparam name="T">
-    /// The type of a WebSocket service. The T must inherit the <see cref="WebSocketService"/> class.
+    /// The type of the WebSocket service. The T must inherit the <see cref="WebSocketService"/> class.
     /// </typeparam>
-    public void AddService<T>(string absPath)
+    public void AddWebSocketService<T>(string absPath)
       where T : WebSocketService, new()
     {
       string msg;
@@ -240,10 +234,11 @@ namespace WebSocketSharp.Server {
       svcHost.Uri = BaseUri.IsAbsoluteUri
                   ? new Uri(BaseUri, absPath)
                   : absPath.ToUri();
-      if (!Sweeped)
-        svcHost.Sweeped = Sweeped;
 
-      _services.Add(absPath, svcHost);
+      if (!Sweeping)
+        svcHost.Sweeping = false;
+
+      _svcHosts.Add(absPath, svcHost);
     }
 
     /// <summary>
@@ -254,7 +249,7 @@ namespace WebSocketSharp.Server {
     /// </param>
     public void Broadcast(string data)
     {
-      _services.Broadcast(data);
+      _svcHosts.Broadcast(data);
     }
 
     /// <summary>
@@ -263,7 +258,7 @@ namespace WebSocketSharp.Server {
     public override void Stop()
     {
       base.Stop();
-      _services.Stop();
+      _svcHosts.Stop();
     }
 
     #endregion

@@ -1,10 +1,10 @@
-#region MIT License
+#region License
 /*
  * Handshake.cs
  *
  * The MIT License
  *
- * Copyright (c) 2012 sta.blockhead
+ * Copyright (c) 2012-2013 sta.blockhead
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,34 +35,49 @@ namespace WebSocketSharp {
 
   internal abstract class Handshake {
 
-    #region Field
+    #region Protected Const Fields
 
-    protected const string _crlf = "\r\n";
+    protected const string CrLf = "\r\n";
 
     #endregion
 
-    #region Constructor
+    #region Protected Constructors
 
     protected Handshake()
     {
       ProtocolVersion = HttpVersion.Version11;
-      Headers         = new NameValueCollection();
+      Headers = new NameValueCollection();
     }
 
     #endregion
 
-    #region Properties
+    #region Public Properties
 
-    public NameValueCollection Headers         { get; internal set; }
-    public Version             ProtocolVersion { get; internal set; }
+    public NameValueCollection Headers {
+      get; protected set;
+    }
+
+    public Version ProtocolVersion {
+      get; protected set;
+    }
 
     #endregion
 
-    #region Methods
+    #region Public Methods
 
     public void AddHeader(string name, string value)
     {
       Headers.Add(name, value);
+    }
+
+    public bool ContainsHeader(string name)
+    {
+      return Headers.Contains(name);
+    }
+
+    public bool ContainsHeader(string name, string value)
+    {
+      return Headers.Contains(name, value);
     }
 
     public string[] GetHeaderValues(string name)
@@ -70,17 +85,7 @@ namespace WebSocketSharp {
       return Headers.GetValues(name);
     }
 
-    public bool HeaderExists(string name)
-    {
-      return Headers.Exists(name);
-    }
-
-    public bool HeaderExists(string name, string value)
-    {
-      return Headers.Exists(name, value);
-    }
-
-    public byte[] ToBytes()
+    public byte[] ToByteArray()
     {
       return Encoding.UTF8.GetBytes(ToString());
     }

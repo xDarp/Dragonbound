@@ -1,14 +1,16 @@
 //
 // WebHeaderCollection.cs
-//	Copied from System.Net.WebHeaderCollection
+//	Copied from System.Net.WebHeaderCollection.cs
 //
 // Authors:
 //	Lawrence Pit (loz@cable.a2000.nl)
 //	Gonzalo Paniagua Javier (gonzalo@ximian.com)
 //	Miguel de Icaza (miguel@novell.com)
+//	sta (sta.blockhead@gmail.com)
 //
-// Copyright 2003 Ximian, Inc. (http://www.ximian.com)
-// Copyright 2007 Novell, Inc. (http://www.novell.com)
+// Copyright (c) 2003 Ximian, Inc. (http://www.ximian.com)
+// Copyright (c) 2007 Novell, Inc. (http://www.novell.com)
+// Copyright (c) 2012-2013 sta.blockhead
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -34,697 +36,1194 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
+using System.Security.Permissions;
 using System.Text;
-    
-// See RFC 2068 par 4.2 Message Headers
-    
+        
 namespace WebSocketSharp.Net {
 
+	/// <summary>
+	/// Provides a collection of the HTTP headers associated with a request or response.
+	/// </summary>
 	[Serializable]
-	[ComVisible(true)]
-	public class WebHeaderCollection : NameValueCollection, ISerializable
-	{
-		private static readonly Dictionary<string, bool> multiValue;
-		private static readonly Dictionary<string, bool> restricted;
-		private static readonly Dictionary<string, bool> restricted_response;
+	[ComVisible (true)]
+	public class WebHeaderCollection : NameValueCollection, ISerializable {
 
-		private bool internallyCreated = false;
-		
-		// Static Initializer
-		
+		#region Fields
+
+		static readonly Dictionary<string, HttpHeaderInfo> headers;
+
+		bool           internallyCreated;
+		HttpHeaderType state;
+
+		#endregion
+
+		#region Constructors
+
 		static WebHeaderCollection () 
 		{
-			// the list of restricted header names as defined 
-			// by the ms.net spec
-			restricted = new Dictionary<string, bool> (StringComparer.InvariantCultureIgnoreCase);
-			restricted.Add ("accept", true);
-			restricted.Add ("connection", true);
-			restricted.Add ("content-length", true);
-			restricted.Add ("content-type", true);
-			restricted.Add ("date", true);
-			restricted.Add ("expect", true);
-			restricted.Add ("host", true);
-			restricted.Add ("if-modified-since", true);
-			restricted.Add ("range", true);
-			restricted.Add ("referer", true);
-			restricted.Add ("transfer-encoding", true);
-			restricted.Add ("user-agent", true);
-			restricted.Add ("proxy-connection", true);
-
-			//
-			restricted_response = new Dictionary<string, bool> (StringComparer.InvariantCultureIgnoreCase);
-			restricted_response.Add ("Content-Length", true);
-			restricted_response.Add ("Transfer-Encoding", true);
-			restricted_response.Add ("WWW-Authenticate", true);
-
-			// see par 14 of RFC 2068 to see which header names
-			// accept multiple values each separated by a comma
-			multiValue = new Dictionary<string, bool> (StringComparer.InvariantCultureIgnoreCase);
-			multiValue.Add ("accept", true);
-			multiValue.Add ("accept-charset", true);
-			multiValue.Add ("accept-encoding", true);
-			multiValue.Add ("accept-language", true);
-			multiValue.Add ("accept-ranges", true);
-			multiValue.Add ("allow", true);
-			multiValue.Add ("authorization", true);
-			multiValue.Add ("cache-control", true);
-			multiValue.Add ("connection", true);
-			multiValue.Add ("content-encoding", true);
-			multiValue.Add ("content-language", true);			
-			multiValue.Add ("expect", true);		
-			multiValue.Add ("if-match", true);
-			multiValue.Add ("if-none-match", true);
-			multiValue.Add ("proxy-authenticate", true);
-			multiValue.Add ("public", true);			
-			multiValue.Add ("range", true);
-			multiValue.Add ("transfer-encoding", true);
-			multiValue.Add ("upgrade", true);
-			multiValue.Add ("vary", true);
-			multiValue.Add ("via", true);
-			multiValue.Add ("warning", true);
-			multiValue.Add ("www-authenticate", true);
-
-			// Extra
-			multiValue.Add ("set-cookie", true);
-			multiValue.Add ("set-cookie2", true);
+			headers = new Dictionary<string, HttpHeaderInfo> (StringComparer.InvariantCultureIgnoreCase)
+			{
+				{ "Accept", new HttpHeaderInfo () {
+					Name = "Accept",
+					Type = HttpHeaderType.Request | HttpHeaderType.Restricted | HttpHeaderType.MultiValue } },
+				{ "AcceptCharset", new HttpHeaderInfo () {
+					Name = "Accept-Charset",
+					Type = HttpHeaderType.Request | HttpHeaderType.MultiValue } },
+				{ "AcceptEncoding", new HttpHeaderInfo () {
+					Name = "Accept-Encoding",
+					Type = HttpHeaderType.Request | HttpHeaderType.MultiValue } },
+				{ "AcceptLanguage", new HttpHeaderInfo () {
+					Name = "Accept-language",
+					Type = HttpHeaderType.Request | HttpHeaderType.MultiValue } },
+				{ "AcceptRanges", new HttpHeaderInfo () {
+					Name = "Accept-Ranges",
+					Type = HttpHeaderType.Response | HttpHeaderType.MultiValue } },
+				{ "Age", new HttpHeaderInfo () {
+					Name = "Age",
+					Type = HttpHeaderType.Response } },
+				{ "Allow", new HttpHeaderInfo () {
+					Name = "Allow",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response | HttpHeaderType.MultiValue } },
+				{ "Authorization", new HttpHeaderInfo () {
+					Name = "Authorization",
+					Type = HttpHeaderType.Request | HttpHeaderType.MultiValue } },
+				{ "CacheControl", new HttpHeaderInfo () {
+					Name = "Cache-Control",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response | HttpHeaderType.MultiValue } },
+				{ "Connection", new HttpHeaderInfo () {
+					Name = "Connection",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response | HttpHeaderType.Restricted | HttpHeaderType.MultiValue } },
+				{ "ContentEncoding", new HttpHeaderInfo () {
+					Name = "Content-Encoding",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response | HttpHeaderType.MultiValue } },
+				{ "ContentLanguage", new HttpHeaderInfo () {
+					Name = "Content-Language",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response | HttpHeaderType.MultiValue } },
+				{ "ContentLength", new HttpHeaderInfo () {
+					Name = "Content-Length",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response | HttpHeaderType.Restricted } },
+				{ "ContentLocation", new HttpHeaderInfo () {
+					Name = "Content-Location",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response } },
+				{ "ContentMd5", new HttpHeaderInfo () {
+					Name = "Content-MD5",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response } },
+				{ "ContentRange", new HttpHeaderInfo () {
+					Name = "Content-Range",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response } },
+				{ "ContentType", new HttpHeaderInfo () {
+					Name = "Content-Type",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response | HttpHeaderType.Restricted } },
+				{ "Cookie", new HttpHeaderInfo () {
+					Name = "Cookie",
+					Type = HttpHeaderType.Request } },
+				{ "Cookie2", new HttpHeaderInfo () {
+					Name = "Cookie2",
+					Type = HttpHeaderType.Request } },
+				{ "Date", new HttpHeaderInfo () {
+					Name = "Date",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response | HttpHeaderType.Restricted } },
+				{ "Expect", new HttpHeaderInfo () {
+					Name = "Expect",
+					Type = HttpHeaderType.Request | HttpHeaderType.Restricted | HttpHeaderType.MultiValue } },
+				{ "Expires", new HttpHeaderInfo () {
+					Name = "Expires",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response } },
+				{ "ETag", new HttpHeaderInfo () {
+					Name = "ETag",
+					Type = HttpHeaderType.Response } },
+				{ "From", new HttpHeaderInfo () {
+					Name = "From",
+					Type = HttpHeaderType.Request } },
+				{ "Host", new HttpHeaderInfo () {
+					Name = "Host",
+					Type = HttpHeaderType.Request | HttpHeaderType.Restricted } },
+				{ "IfMatch", new HttpHeaderInfo () {
+					Name = "If-Match",
+					Type = HttpHeaderType.Request | HttpHeaderType.MultiValue } },
+				{ "IfModifiedSince", new HttpHeaderInfo () {
+					Name = "If-Modified-Since",
+					Type = HttpHeaderType.Request | HttpHeaderType.Restricted } },
+				{ "IfNoneMatch", new HttpHeaderInfo () {
+					Name = "If-None-Match",
+					Type = HttpHeaderType.Request | HttpHeaderType.MultiValue } },
+				{ "IfRange", new HttpHeaderInfo () {
+					Name = "If-Range",
+					Type = HttpHeaderType.Request } },
+				{ "IfUnmodifiedSince", new HttpHeaderInfo () {
+					Name = "If-Unmodified-Since",
+					Type = HttpHeaderType.Request } },
+				{ "KeepAlive", new HttpHeaderInfo () {
+					Name = "Keep-Alive",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response | HttpHeaderType.MultiValue } },
+				{ "LastModified", new HttpHeaderInfo () {
+					Name = "Last-Modified",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response } },
+				{ "Location", new HttpHeaderInfo () {
+					Name = "Location",
+					Type = HttpHeaderType.Response } },
+				{ "MaxForwards", new HttpHeaderInfo () {
+					Name = "Max-Forwards",
+					Type = HttpHeaderType.Request } },
+				{ "Pragma", new HttpHeaderInfo () {
+					Name = "Pragma",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response } },
+				{ "ProxyConnection", new HttpHeaderInfo () {
+					Name = "Proxy-Connection",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response | HttpHeaderType.Restricted } },
+				{ "ProxyAuthenticate", new HttpHeaderInfo () {
+					Name = "Proxy-Authenticate",
+					Type = HttpHeaderType.Response | HttpHeaderType.MultiValue } },
+				{ "ProxyAuthorization", new HttpHeaderInfo () {
+					Name = "Proxy-Authorization",
+					Type = HttpHeaderType.Request } },
+				{ "Public", new HttpHeaderInfo () {
+					Name = "Public",
+					Type = HttpHeaderType.Response | HttpHeaderType.MultiValue } },
+				{ "Range", new HttpHeaderInfo () {
+					Name = "Range",
+					Type = HttpHeaderType.Request | HttpHeaderType.Restricted | HttpHeaderType.MultiValue } },
+				{ "Referer", new HttpHeaderInfo () {
+					Name = "Referer",
+					Type = HttpHeaderType.Request | HttpHeaderType.Restricted } },
+				{ "RetryAfter", new HttpHeaderInfo () {
+					Name = "Retry-After",
+					Type = HttpHeaderType.Response } },
+				{ "SecWebSocketAccept", new HttpHeaderInfo () {
+					Name = "Sec-WebSocket-Accept",
+					Type = HttpHeaderType.Response | HttpHeaderType.Restricted } },
+				{ "SecWebSocketExtensions", new HttpHeaderInfo () {
+					Name = "Sec-WebSocket-Extensions",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response | HttpHeaderType.Restricted | HttpHeaderType.MultiValueInRequest } },
+				{ "SecWebSocketKey", new HttpHeaderInfo () {
+					Name = "Sec-WebSocket-Key",
+					Type = HttpHeaderType.Request | HttpHeaderType.Restricted } },
+				{ "SecWebSocketProtocol", new HttpHeaderInfo () {
+					Name = "Sec-WebSocket-Protocol",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response | HttpHeaderType.MultiValueInRequest } },
+				{ "SecWebSocketVersion", new HttpHeaderInfo () {
+					Name = "Sec-WebSocket-Version",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response | HttpHeaderType.Restricted | HttpHeaderType.MultiValueInResponse } },
+				{ "Server", new HttpHeaderInfo () {
+					Name = "Server",
+					Type = HttpHeaderType.Response } },
+				{ "SetCookie", new HttpHeaderInfo () {
+					Name = "Set-Cookie",
+					Type = HttpHeaderType.Response | HttpHeaderType.MultiValue } },
+				{ "SetCookie2", new HttpHeaderInfo () {
+					Name = "Set-Cookie2",
+					Type = HttpHeaderType.Response | HttpHeaderType.MultiValue } },
+				{ "Te", new HttpHeaderInfo () {
+					Name = "TE",
+					Type = HttpHeaderType.Request } },
+				{ "Trailer", new HttpHeaderInfo () {
+					Name = "Trailer",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response } },
+				{ "TransferEncoding", new HttpHeaderInfo () {
+					Name = "Transfer-Encoding",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response | HttpHeaderType.Restricted | HttpHeaderType.MultiValue } },
+				{ "Translate", new HttpHeaderInfo () {
+					Name = "Translate",
+					Type = HttpHeaderType.Request } },
+				{ "Upgrade", new HttpHeaderInfo () {
+					Name = "Upgrade",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response | HttpHeaderType.MultiValue } },
+				{ "UserAgent", new HttpHeaderInfo () {
+					Name = "User-Agent",
+					Type = HttpHeaderType.Request | HttpHeaderType.Restricted } },
+				{ "Vary", new HttpHeaderInfo () {
+					Name = "Vary",
+					Type = HttpHeaderType.Response | HttpHeaderType.MultiValue } },
+				{ "Via", new HttpHeaderInfo () {
+					Name = "Via",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response | HttpHeaderType.MultiValue } },
+				{ "Warning", new HttpHeaderInfo () {
+					Name = "Warning",
+					Type = HttpHeaderType.Request | HttpHeaderType.Response | HttpHeaderType.MultiValue } },
+				{ "WwwAuthenticate", new HttpHeaderInfo () {
+					Name = "WWW-Authenticate",
+					Type = HttpHeaderType.Response | HttpHeaderType.Restricted | HttpHeaderType.MultiValue } }
+			};
 		}
-		
-		// Constructors
 
-		public WebHeaderCollection () { }
-
-		protected WebHeaderCollection (
-			SerializationInfo serializationInfo, 
-			StreamingContext streamingContext)
-		{
-			int count;
-
-			try {
-				count = serializationInfo.GetInt32("Count");
-				for (int i = 0; i < count; i++) 
-					this.Add (serializationInfo.GetString (i.ToString ()),
-						  serializationInfo.GetString ((count + i).ToString ()));
-			} catch (SerializationException){
-				count = serializationInfo.GetInt32("count");
-				for (int i = 0; i < count; i++) 
-					this.Add (serializationInfo.GetString ("k" + i),
-						  serializationInfo.GetString ("v" + i));
-			}
-			
-		}
-		
 		internal WebHeaderCollection (bool internallyCreated)
 		{
 			this.internallyCreated = internallyCreated;
+			state = HttpHeaderType.Unspecified;
 		}
 
-		// Methods
-		
-		public void Add (string header)
+		/// <summary>
+		/// Initializes a new instance of the <see cref="WebHeaderCollection"/> class
+		/// with the specified <see cref="SerializationInfo"/> and <see cref="StreamingContext"/>.
+		/// </summary>
+		/// <param name="serializationInfo">
+		/// A <see cref="SerializationInfo"/> that contains the data to need to serialize the <see cref="WebHeaderCollection"/> object.
+		/// </param>
+		/// <param name="streamingContext">
+		/// A <see cref="StreamingContext"/> that contains the source of the serialized stream associated with the new <see cref="WebHeaderCollection"/>.
+		/// </param>
+		/// <exception cref="ArgumentNullException">
+		/// <paramref name="serializationInfo"/> is <see langword="null"/>.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		/// An element with the specified name is not found in <paramref name="serializationInfo"/>.
+		/// </exception>
+		protected WebHeaderCollection (
+			SerializationInfo serializationInfo, StreamingContext streamingContext)
 		{
-			if (header == null)
-				throw new ArgumentNullException ("header");
-			int pos = header.IndexOf (':');
-			if (pos == -1)
-				throw new ArgumentException ("no colon found", "header");
-			this.Add (header.Substring (0, pos), 
-				  header.Substring (pos + 1));
-		}
-		
-		public override void Add (string name, string value)
-		{
-			if (name == null)
-				throw new ArgumentNullException ("name");
-			if (internallyCreated && IsRestricted (name))
-				throw new ArgumentException ("This header must be modified with the appropiate property.");
-			this.AddWithoutValidate (name, value);
-		}
+			if (serializationInfo.IsNull ())
+				throw new ArgumentNullException ("serializationInfo");
 
-		protected void AddWithoutValidate (string headerName, string headerValue)
-		{
-			if (!IsHeaderName (headerName))
-				throw new ArgumentException ("invalid header name: " + headerName, "headerName");
-			if (headerValue == null)
-				headerValue = String.Empty;
-			else
-				headerValue = headerValue.Trim ();
-			if (!IsHeaderValue (headerValue))
-				throw new ArgumentException ("invalid header value: " + headerValue, "headerValue");
-			base.Add (headerName, headerValue);			
-		}
+			try {
+				internallyCreated = serializationInfo.GetBoolean ("InternallyCreated");
+				state = (HttpHeaderType) serializationInfo.GetInt32 ("State");
 
-		public override string [] GetValues (string header)
-		{
-			if (header == null)
-				throw new ArgumentNullException ("header");
-
-			string [] values = base.GetValues (header);
-			if (values == null || values.Length == 0)
-				return null;
-
-			/*
-			if (IsMultiValue (header)) {
-				values = GetMultipleValues (values);
-			}
-			*/
-
-			return values;
-		}
-
-		public override string[] GetValues (int index)
-		{
-			string[] values = base.GetValues (index);
-			if (values == null || values.Length == 0) {
-				return(null);
-			}
-			
-			return(values);
-		}
-
-		/* Now i wonder why this is here...
-		static string [] GetMultipleValues (string [] values)
-		{
-			ArrayList mvalues = new ArrayList (values.Length);
-			StringBuilder sb = null;
-			for (int i = 0; i < values.Length; ++i) {
-				string val = values [i];
-				if (val.IndexOf (',') == -1) {
-					mvalues.Add (val);
-					continue;
-				}
-
-				if (sb == null)
-					sb = new StringBuilder ();
-
-				bool quote = false;
-				for (int k = 0; k < val.Length; k++) {
-					char c = val [k];
-					if (c == '"') {
-						quote = !quote;
-					} else if (!quote && c == ',') {
-						mvalues.Add (sb.ToString ().Trim ());
-						sb.Length = 0;
-						continue;
-					}
-					sb.Append (c);
-				}
-
-				if (sb.Length > 0) {
-					mvalues.Add (sb.ToString ().Trim ());
-					sb.Length = 0;
-				}
-			}
-
-			return (string []) mvalues.ToArray (typeof (string));
-		}
-		*/
-
-		public static bool IsRestricted (string headerName)
-		{
-			if (headerName == null)
-				throw new ArgumentNullException ("headerName");
-
-			if (headerName == "") // MS throw nullexception here!
-				throw new ArgumentException ("empty string", "headerName");
-
-			if (!IsHeaderName (headerName))
-				throw new ArgumentException ("Invalid character in header");
-
-			return restricted.ContainsKey (headerName);
-		}
-
-		public static bool IsRestricted (string headerName, bool response)
-		{
-			if (String.IsNullOrEmpty (headerName))
-				throw new ArgumentNullException ("headerName");
-
-			if (!IsHeaderName (headerName))
-				throw new ArgumentException ("Invalid character in header");
-
-
-			if (response)
-				return restricted_response.ContainsKey (headerName);
-			return restricted.ContainsKey (headerName);
-		}
-
-		public override void OnDeserialization (object sender)
-		{
-		}
-
-		public override void Remove (string name)
-		{
-			if (name == null)
-				throw new ArgumentNullException ("name");
-			if (internallyCreated && IsRestricted (name))
-				throw new ArgumentException ("restricted header");
-			base.Remove (name);
-		}
-
-		public override void Set (string name, string value)
-		{
-			if (name == null)
-				throw new ArgumentNullException ("name");
-			if (internallyCreated && IsRestricted (name))
-				throw new ArgumentException ("restricted header");
-			if (!IsHeaderName (name))
-				throw new ArgumentException ("invalid header name");
-			if (value == null)
-				value = String.Empty;
-			else
-				value = value.Trim ();
-			if (!IsHeaderValue (value))
-				throw new ArgumentException ("invalid header value");
-			base.Set (name, value);			
-		}
-
-		public byte[] ToByteArray ()
-		{
-			return Encoding.UTF8.GetBytes(ToString ());
-		}
-
-		internal string ToStringMultiValue ()
-		{
-			StringBuilder sb = new StringBuilder();
-
-			int count = base.Count;
-			for (int i = 0; i < count ; i++) {
-				string key = GetKey (i);
-				if (IsMultiValue (key)) {
-					foreach (string v in GetValues (i)) {
-						sb.Append (key)
-						  .Append (": ")
-						  .Append (v)
-						  .Append ("\r\n");
-					}
-				} else {
-					sb.Append (key)
-					  .Append (": ")
-					  .Append (Get (i))
-					  .Append ("\r\n");
-				}
-			 }
-			return sb.Append("\r\n").ToString();
-		}
-
-		public override string ToString ()
-		{
-			StringBuilder sb = new StringBuilder();
-
-			int count = base.Count;
-			for (int i = 0; i < count ; i++)
-				sb.Append (GetKey (i))
-				  .Append (": ")
-				  .Append (Get (i))
-				  .Append ("\r\n");
-
-			return sb.Append("\r\n").ToString();
-		}
-
-		void ISerializable.GetObjectData (
-			SerializationInfo serializationInfo,
-			StreamingContext streamingContext)
-		{
-			GetObjectData (serializationInfo, streamingContext);
-		}
-
-		public override void GetObjectData (SerializationInfo serializationInfo, StreamingContext streamingContext)
-		{
-			int count = base.Count;
-			serializationInfo.AddValue ("Count", count);
-			for (int i = 0; i < count; i++) {
-				serializationInfo.AddValue (i.ToString (), GetKey (i));
-				serializationInfo.AddValue ((count + i).ToString (), Get (i));
+				int count = serializationInfo.GetInt32 ("Count");
+				count.Times (i => {
+					base.Add (
+						serializationInfo.GetString (i.ToString ()),
+						serializationInfo.GetString ((count + i).ToString ()));
+				});
+			} catch (SerializationException ex) {
+				throw new ArgumentException (ex.Message, "serializationInfo", ex);
 			}
 		}
 
-		public override string[] AllKeys
+		/// <summary>
+		/// Initializes a new instance of the <see cref="WebHeaderCollection"/> class.
+		/// </summary>
+		public WebHeaderCollection ()
+		{
+			internallyCreated = false;
+			state = HttpHeaderType.Unspecified;
+		}
+
+		#endregion
+
+		#region Properties
+
+		/// <summary>
+		/// Gets all header names in the collection.
+		/// </summary>
+		/// <value>
+		/// An array of <see cref="string"/> that contains all header names in the collection.
+		/// </value>
+		public override string [] AllKeys
 		{
 			get {
-				return(base.AllKeys);
+				return base.AllKeys;
 			}
 		}
-		
+
+		/// <summary>
+		/// Gets the number of headers in the collection.
+		/// </summary>
+		/// <value>
+		/// An <see cref="int"/> that indicates the number of headers in the collection.
+		/// </value>
 		public override int Count 
 		{
 			get {
-				return(base.Count);
+				return base.Count;
 			}
 		}
 
+		/// <summary>
+		/// Gets or sets the specified request <paramref name="header"/> in the collection.
+		/// </summary>
+		/// <value>
+		/// A <see cref="string"/> that contains the value of the specified request <paramref name="header"/>.
+		/// </value>
+		/// <param name="header">
+		/// A <see cref="HttpRequestHeader"/> that indicates a request header.
+		/// </param>
+		/// <exception cref="InvalidOperationException">
+		/// The current <see cref="WebHeaderCollection"/> instance does not allow any of <see cref="HttpRequestHeader"/> values.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		///   <para>
+		///   <paramref name="header"/> is a restricted header.
+		///   </para>
+		///   <para>
+		///   -or-
+		///   </para>
+		///   <para>
+		///   <paramref name="value"/> contains invalid characters.
+		///   </para>
+		/// </exception>
+		/// <exception cref="ArgumentOutOfRangeException">
+		/// The length of <paramref name="value"/> is greater than 65535.
+		/// </exception>
+		public string this [HttpRequestHeader header]
+		{
+			get {
+				return Get (Convert (header));
+			}
+
+			set {
+				Add (header, value);
+			}
+		}
+
+		/// <summary>
+		/// Gets or sets the specified response <paramref name="header"/> in the collection.
+		/// </summary>
+		/// <value>
+		/// A <see cref="string"/> that contains the value of the specified response <paramref name="header"/>.
+		/// </value>
+		/// <param name="header">
+		/// A <see cref="HttpResponseHeader"/> that indicates a response header.
+		/// </param>
+		/// <exception cref="InvalidOperationException">
+		/// The current <see cref="WebHeaderCollection"/> instance does not allow any of <see cref="HttpResponseHeader"/> values.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		///   <para>
+		///   <paramref name="header"/> is a restricted header.
+		///   </para>
+		///   <para>
+		///   -or-
+		///   </para>
+		///   <para>
+		///   <paramref name="value"/> contains invalid characters.
+		///   </para>
+		/// </exception>
+		/// <exception cref="ArgumentOutOfRangeException">
+		/// The length of <paramref name="value"/> is greater than 65535.
+		/// </exception>
+		public string this [HttpResponseHeader header]
+		{
+			get {
+				return Get (Convert (header));
+			}
+
+			set {
+				Add (header, value);
+			}
+		}
+
+		/// <summary>
+		/// Gets a collection of header names in the collection.
+		/// </summary>
+		/// <value>
+		/// A <see cref="KeysCollection"/> that contains a collection of header names in the collection.
+		/// </value>
 		public override KeysCollection Keys
 		{
 			get {
-				return(base.Keys);
+				return base.Keys;
 			}
 		}
 
-		public override string Get (int index)
-		{
-			return(base.Get (index));
-		}
-		
-		public override string Get (string name)
-		{
-			return(base.Get (name));
-		}
-		
-		public override string GetKey (int index)
-		{
-			return(base.GetKey (index));
-		}
+		#endregion
 
-		public void Add (HttpRequestHeader header, string value)
-		{
-			Add (RequestHeaderToString (header), value);
-		}
+		#region Private Methods
 
-		public void Remove (HttpRequestHeader header)
+		void Add (string name, string value, bool ignoreRestricted)
 		{
-			Remove (RequestHeaderToString (header));
-		}
-
-		public void Set (HttpRequestHeader header, string value)
-		{
-			Set (RequestHeaderToString (header), value);
-		}
-
-		public void Add (HttpResponseHeader header, string value)
-		{
-			Add (ResponseHeaderToString (header), value);
-		}
-
-		public void Remove (HttpResponseHeader header)
-		{
-			Remove (ResponseHeaderToString (header));
-		}
-
-		public void Set (HttpResponseHeader header, string value)
-		{
-			Set (ResponseHeaderToString (header), value);
-		}
-
-		string RequestHeaderToString (HttpRequestHeader value)
-		{
-			switch (value){
-			case HttpRequestHeader.CacheControl:
-				return "Cache-Control";
-			case HttpRequestHeader.Connection:
-				return "Connection";
-			case HttpRequestHeader.Date:
-				return "Date";
-			case HttpRequestHeader.KeepAlive:
-				return "Keep-Alive";
-			case HttpRequestHeader.Pragma:
-				return "Pragma";
-			case HttpRequestHeader.Trailer:
-				return "Trailer";
-			case HttpRequestHeader.TransferEncoding:
-				return "Transfer-Encoding";
-			case HttpRequestHeader.Upgrade:
-				return "Upgrade";
-			case HttpRequestHeader.Via:
-				return "Via";
-			case HttpRequestHeader.Warning:
-				return "Warning";
-			case HttpRequestHeader.Allow:
-				return "Allow";
-			case HttpRequestHeader.ContentLength:
-				return "Content-Length";
-			case HttpRequestHeader.ContentType:
-				return "Content-Type";
-			case HttpRequestHeader.ContentEncoding:
-				return "Content-Encoding";
-			case HttpRequestHeader.ContentLanguage:
-				return "Content-Language";
-			case HttpRequestHeader.ContentLocation:
-				return "Content-Location";
-			case HttpRequestHeader.ContentMd5:
-				return "Content-MD5";
-			case HttpRequestHeader.ContentRange:
-				return "Content-Range";
-			case HttpRequestHeader.Expires:
-				return "Expires";
-			case HttpRequestHeader.LastModified:
-				return "Last-Modified";
-			case HttpRequestHeader.Accept:
-				return "Accept";
-			case HttpRequestHeader.AcceptCharset:
-				return "Accept-Charset";
-			case HttpRequestHeader.AcceptEncoding:
-				return "Accept-Encoding";
-			case HttpRequestHeader.AcceptLanguage:
-				return "accept-language";
-			case HttpRequestHeader.Authorization:
-				return "Authorization";
-			case HttpRequestHeader.Cookie:
-				return "Cookie";
-			case HttpRequestHeader.Expect:
-				return "Expect";
-			case HttpRequestHeader.From:
-				return "From";
-			case HttpRequestHeader.Host:
-				return "Host";
-			case HttpRequestHeader.IfMatch:
-				return "If-Match";
-			case HttpRequestHeader.IfModifiedSince:
-				return "If-Modified-Since";
-			case HttpRequestHeader.IfNoneMatch:
-				return "If-None-Match";
-			case HttpRequestHeader.IfRange:
-				return "If-Range";
-			case HttpRequestHeader.IfUnmodifiedSince:
-				return "If-Unmodified-Since";
-			case HttpRequestHeader.MaxForwards:
-				return "Max-Forwards";
-			case HttpRequestHeader.ProxyAuthorization:
-				return "Proxy-Authorization";
-			case HttpRequestHeader.Referer:
-				return "Referer";
-			case HttpRequestHeader.Range:
-				return "Range";
-			case HttpRequestHeader.Te:
-				return "TE";
-			case HttpRequestHeader.Translate:
-				return "Translate";
-			case HttpRequestHeader.UserAgent:
-				return "User-Agent";
-			default:
-				throw new InvalidOperationException ();
-			}
-		}
-		
-		
-		public string this[HttpRequestHeader hrh]
-		{
-			get {
-				return Get (RequestHeaderToString (hrh));
-			}
-			
-			set {
-				Add (RequestHeaderToString (hrh), value);
-			}
-		}
-
-		string ResponseHeaderToString (HttpResponseHeader value)
-		{
-			switch (value){
-			case HttpResponseHeader.CacheControl:
-				return "Cache-Control";
-			case HttpResponseHeader.Connection:
-				return "Connection";
-			case HttpResponseHeader.Date:
-				return "Date";
-			case HttpResponseHeader.KeepAlive:
-				return "Keep-Alive";
-			case HttpResponseHeader.Pragma:
-				return "Pragma";
-			case HttpResponseHeader.Trailer:
-				return "Trailer";
-			case HttpResponseHeader.TransferEncoding:
-				return "Transfer-Encoding";
-			case HttpResponseHeader.Upgrade:
-				return "Upgrade";
-			case HttpResponseHeader.Via:
-				return "Via";
-			case HttpResponseHeader.Warning:
-				return "Warning";
-			case HttpResponseHeader.Allow:
-				return "Allow";
-			case HttpResponseHeader.ContentLength:
-				return "Content-Length";
-			case HttpResponseHeader.ContentType:
-				return "Content-Type";
-			case HttpResponseHeader.ContentEncoding:
-				return "Content-Encoding";
-			case HttpResponseHeader.ContentLanguage:
-				return "Content-Language";
-			case HttpResponseHeader.ContentLocation:
-				return "Content-Location";
-			case HttpResponseHeader.ContentMd5:
-				return "Content-MD5";
-			case HttpResponseHeader.ContentRange:
-				return "Content-Range";
-			case HttpResponseHeader.Expires:
-				return "Expires";
-			case HttpResponseHeader.LastModified:
-				return "Last-Modified";
-			case HttpResponseHeader.AcceptRanges:
-				return "Accept-Ranges";
-			case HttpResponseHeader.Age:
-				return "Age";
-			case HttpResponseHeader.ETag:
-				return "ETag";
-			case HttpResponseHeader.Location:
-				return "Location";
-			case HttpResponseHeader.ProxyAuthenticate:
-				return "Proxy-Authenticate";
-			case HttpResponseHeader.RetryAfter:
-				return "Retry-After";
-			case HttpResponseHeader.Server:
-				return "Server";
-			case HttpResponseHeader.SetCookie:
-				return "Set-Cookie";
-			case HttpResponseHeader.Vary:
-				return "Vary";
-			case HttpResponseHeader.WwwAuthenticate:
-				return "WWW-Authenticate";
-			default:
-				throw new InvalidOperationException ();
-			}
-		}
-
-		public string this[HttpResponseHeader hrh]
-		{
-			get
-			{
-				return Get (ResponseHeaderToString (hrh));
-			}
-
-			set
-			{
-				Add (ResponseHeaderToString (hrh), value);
-			}
-		}
-
-		public override void Clear ()
-		{
-			base.Clear ();
-		}
-
-		public override IEnumerator GetEnumerator ()
-		{
-			return(base.GetEnumerator ());
-		}
-
-		// Internal Methods
-		
-		// With this we don't check for invalid characters in header. See bug #55994.
-		internal void SetInternal (string header)
-		{
-			int pos = header.IndexOf (':');
-			if (pos == -1)
-				throw new ArgumentException ("no colon found", "header");				
-
-			SetInternal (header.Substring (0, pos), header.Substring (pos + 1));
-		}
-
-		internal void SetInternal (string name, string value)
-		{
-			if (value == null)
-				value = String.Empty;
+			Action <string, string> add;
+			if (ignoreRestricted)
+				add = AddWithoutCheckingNameAndRestricted;
 			else
-				value = value.Trim ();
+				add = AddWithoutCheckingName;
+
+			DoWithCheckingState (add, CheckName (name), value, true);
+		}
+
+		void AddWithoutCheckingName (string name, string value)
+		{
+			DoWithoutCheckingName (base.Add, name, value);
+		}
+
+		void AddWithoutCheckingNameAndRestricted (string name, string value)
+		{
+			base.Add (name, CheckValue (value));
+		}
+
+		static int CheckColonSeparated (string header)
+		{
+			int i = header.IndexOf (':');
+			if (i == -1)
+				throw new ArgumentException ("No colon found.", "header");
+
+			return i;
+		}
+
+		static HttpHeaderType CheckHeaderType (string name)
+		{
+			HttpHeaderInfo info;
+			return !TryGetHeaderInfo (name, out info)
+			       ? HttpHeaderType.Unspecified
+			       : info.IsRequest && !info.IsResponse
+			         ? HttpHeaderType.Request
+			         : !info.IsRequest && info.IsResponse
+			           ? HttpHeaderType.Response
+			           : HttpHeaderType.Unspecified;
+		}
+
+		static string CheckName (string name)
+		{
+			if (name.IsNullOrEmpty ())
+				throw new ArgumentNullException ("name");
+
+			name = name.Trim ();
+			if (!IsHeaderName (name))
+				throw new ArgumentException ("Contains invalid characters.", "name");
+
+			return name;
+		}
+
+		void CheckRestricted (string name)
+		{
+			if (!internallyCreated && ContainsInRestricted (name, true))
+				throw new ArgumentException ("This header must be modified with the appropiate property.");
+		}
+
+		void CheckState (bool response)
+		{
+			if (state == HttpHeaderType.Unspecified)
+				return;
+
+			if (response && state == HttpHeaderType.Request)
+				throw new InvalidOperationException ("This collection has already been used to store the request headers.");
+
+			if (!response && state == HttpHeaderType.Response)
+				throw new InvalidOperationException ("This collection has already been used to store the response headers.");
+		}
+
+		static string CheckValue (string value)
+		{
+			if (value.IsNullOrEmpty ())
+				return String.Empty;
+
+			value = value.Trim ();
+			if (value.Length > 65535)
+				throw new ArgumentOutOfRangeException ("value", "The length must not be greater than 65535.");
+
 			if (!IsHeaderValue (value))
-				throw new ArgumentException ("invalid header value");
+				throw new ArgumentException ("Contains invalid characters.", "value");
 
-			if (IsMultiValue (name)) {
-				base.Add (name, value);
-			} else {
-				base.Remove (name);
-				base.Set (name, value);	
-			}
+			return value;
 		}
 
-		internal void RemoveAndAdd (string name, string value)
+		static string Convert (string key)
 		{
-			if (value == null)
-				value = String.Empty;
-			else
-				value = value.Trim ();
+			HttpHeaderInfo info;
+			return headers.TryGetValue (key, out info)
+			       ? info.Name
+			       : String.Empty;
+		}
 
+		static bool ContainsInRestricted (string name, bool response)
+		{
+			HttpHeaderInfo info;
+			return TryGetHeaderInfo (name, out info)
+			       ? info.IsRestricted (response)
+			       : false;
+		}
+
+		void DoWithCheckingState (
+			Action <string, string> act, string name, string value, bool setState)
+		{
+			var type = CheckHeaderType (name);
+			if (type == HttpHeaderType.Request)
+				DoWithCheckingState (act, name, value, false, setState);
+			else if (type == HttpHeaderType.Response)
+				DoWithCheckingState (act, name, value, true, setState);
+			else
+				act (name, value);
+		}
+
+		void DoWithCheckingState (
+			Action <string, string> act, string name, string value, bool response, bool setState)
+		{
+			CheckState (response);
+			act (name, value);
+			if (setState)
+				SetState (response);
+		}
+
+		void DoWithoutCheckingName (Action <string, string> act, string name, string value)
+		{
+			CheckRestricted (name);
+			act (name, CheckValue (value));
+		}
+
+		static HttpHeaderInfo GetHeaderInfo (string name)
+		{
+			return (from HttpHeaderInfo info in headers.Values
+			        where info.Name.Equals (name, StringComparison.InvariantCultureIgnoreCase)
+			        select info).FirstOrDefault ();
+		}
+
+		void RemoveWithoutCheckingName (string name, string unuse)
+		{
+			CheckRestricted (name);
 			base.Remove (name);
-			base.Set (name, value);
+		}
+
+		void SetState (bool response)
+		{
+			if (state == HttpHeaderType.Unspecified)
+				state = response
+				        ? HttpHeaderType.Response
+				        : HttpHeaderType.Request;
+		}
+
+		void SetWithoutCheckingName (string name, string value)
+		{
+			DoWithoutCheckingName (base.Set, name, value);
+		}
+
+		static bool TryGetHeaderInfo (string name, out HttpHeaderInfo info)
+		{
+			info = GetHeaderInfo (name);
+			return info.IsNull ()
+			       ? false
+			       : true;
+		}
+
+		#endregion
+
+		#region Internal Methods
+
+		internal static string Convert (HttpRequestHeader header)
+		{
+			return Convert (header.ToString ());
+		}
+
+		internal static string Convert (HttpResponseHeader header)
+		{
+			return Convert (header.ToString ());
+		}
+
+		internal static bool IsHeaderName (string name)
+		{
+			return name.IsNullOrEmpty ()
+			       ? false
+			       : name.IsToken ();
+		}
+
+		internal static bool IsHeaderValue (string value)
+		{
+			return value.IsText ();
+		}
+
+		internal static bool IsMultiValue (string headerName, bool response)
+		{
+			if (headerName.IsNullOrEmpty ())
+				return false;
+
+			HttpHeaderInfo info;
+			return TryGetHeaderInfo (headerName, out info)
+			       ? info.IsMultiValue (response)
+			       : false;
 		}
 
 		internal void RemoveInternal (string name)
 		{
-			if (name == null)
-				throw new ArgumentNullException ("name");
 			base.Remove (name);
-		}		
-		
-		// Private Methods
-		
-		internal static bool IsMultiValue (string headerName)
-		{
-			if (headerName == null || headerName == "")
-				return false;
+		}
 
-			return multiValue.ContainsKey (headerName);
-		}		
-		
-		internal static bool IsHeaderValue (string value)
+		internal void SetInternal (string header, bool response)
 		{
-			// TEXT any 8 bit value except CTL's (0-31 and 127)
-			//      but including \r\n space and \t
-			//      after a newline at least one space or \t must follow
-			//      certain header fields allow comments ()
-				
-			int len = value.Length;
-			for (int i = 0; i < len; i++) {			
-				char c = value [i];
-				if (c == 127)
-					return false;
-				if (c < 0x20 && (c != '\r' && c != '\n' && c != '\t'))
-					return false;
-				if (c == '\n' && ++i < len) {
-					c = value [i];
-					if (c != ' ' && c != '\t')
-						return false;
+			int pos = CheckColonSeparated (header);
+			SetInternal (header.Substring (0, pos), header.Substring (pos + 1), response);
+		}
+
+		internal void SetInternal (string name, string value, bool response)
+		{
+			value = CheckValue (value);
+			if (IsMultiValue (name, response))
+				base.Add (name, value);
+			else
+				base.Set (name, value);
+		}
+
+		internal string ToStringMultiValue (bool response)
+		{
+			var sb = new StringBuilder ();
+			Count.Times (i => {
+				string key = GetKey (i);
+				if (IsMultiValue (key, response)) {
+					foreach (string value in GetValues (i))
+						sb.AppendFormat ("{0}: {1}\r\n", key, value);
+				} else {
+					sb.AppendFormat ("{0}: {1}\r\n", key, Get (i));
 				}
-			}
-			
-			return true;
+			});
+
+			return sb.Append ("\r\n").ToString ();
 		}
-		
-		internal static bool IsHeaderName (string name)
+
+		#endregion
+
+		#region Explicit Interface Implementation
+
+		/// <summary>
+		/// Populates the specified <see cref="SerializationInfo"/> with the data to need to
+		/// serialize the <see cref="WebHeaderCollection"/> object.
+		/// </summary>
+		/// <param name="serializationInfo">
+		/// A <see cref="SerializationInfo"/> that holds the data to need to serialize the <see cref="WebHeaderCollection"/> object.
+		/// </param>
+		/// <param name="streamingContext">
+		/// A <see cref="StreamingContext"/> that specifies the destination for the serialization.
+		/// </param>
+		/// <exception cref="ArgumentNullException">
+		/// <paramref name="serializationInfo"/> is <see langword="null"/>.
+		/// </exception>
+		[SecurityPermission (SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.SerializationFormatter, SerializationFormatter = true)]
+		void ISerializable.GetObjectData (
+			SerializationInfo serializationInfo, StreamingContext streamingContext)
 		{
-			if (name == null || name.Length == 0)
-				return false;
-
-			int len = name.Length;
-			for (int i = 0; i < len; i++) {			
-				char c = name [i];
-				if (c > 126 || !allowed_chars [(int) c])
-					return false;
-			}
-			
-			return true;
+			GetObjectData (serializationInfo, streamingContext);
 		}
 
-		static bool [] allowed_chars = new bool [126] {
-			false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-			false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-			false, false, false, false, false, true, false, true, true, true, true, false, false, false, true,
-			true, false, true, true, false, true, true, true, true, true, true, true, true, true, true, false,
-			false, false, false, false, false, false, true, true, true, true, true, true, true, true, true,
-			true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
-			false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true,
-			true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
-			false, true, false
-			};
+		#endregion
+
+		#region Protected Methods
+
+		/// <summary>
+		/// Adds a header to the collection without checking whether the header is on the restricted header list.
+		/// </summary>
+		/// <param name="headerName">
+		/// A <see cref="string"/> that contains the name of the header to add.
+		/// </param>
+		/// <param name="headerValue">
+		/// A <see cref="string"/> that contains the value of the header to add.
+		/// </param>
+		/// <exception cref="ArgumentNullException">
+		/// <paramref name="headerName"/> is <see langword="null"/> or <see cref="String.Empty"/>.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		/// <paramref name="headerName"/> or <paramref name="headerValue"/> contains invalid characters.
+		/// </exception>
+		/// <exception cref="ArgumentOutOfRangeException">
+		/// The length of <paramref name="headerValue"/> is greater than 65535.
+		/// </exception>
+		/// <exception cref="InvalidOperationException">
+		/// The current <see cref="WebHeaderCollection"/> instance does not allow the <paramref name="headerName"/>.
+		/// </exception>
+		protected void AddWithoutValidate (string headerName, string headerValue)
+		{
+			Add (headerName, headerValue, true);
+		}
+
+		#endregion
+
+		#region Public Methods
+
+		/// <summary>
+		/// Adds the specified <paramref name="header"/> to the collection.
+		/// </summary>
+		/// <param name="header">
+		/// A <see cref="string"/> that contains a header with the name and value separated by a colon (:).
+		/// </param>
+		/// <exception cref="ArgumentNullException">
+		/// <paramref name="header"/> is <see langword="null"/>, <see cref="String.Empty"/>, or
+		/// the name part of <paramref name="header"/> is <see cref="String.Empty"/>.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		///   <para>
+		///   <paramref name="header"/> does not contain a colon.
+		///   </para>
+		///   <para>
+		///   -or-
+		///   </para>
+		///   <para>
+		///   <paramref name="header"/> is a restricted header.
+		///   </para>
+		///   <para>
+		///   -or-
+		///   </para>
+		///   <para>
+		///   The name or value part of <paramref name="header"/> contains invalid characters.
+		///   </para>
+		/// </exception>
+		/// <exception cref="ArgumentOutOfRangeException">
+		/// The length of the value part of <paramref name="header"/> is greater than 65535.
+		/// </exception>
+		/// <exception cref="InvalidOperationException">
+		/// The current <see cref="WebHeaderCollection"/> instance does not allow the <paramref name="header"/>.
+		/// </exception>
+		public void Add (string header)
+		{
+			if (header.IsNullOrEmpty ())
+				throw new ArgumentNullException ("header");
+
+			int pos = CheckColonSeparated (header);
+			Add (header.Substring (0, pos), header.Substring (pos + 1));
+		}
+
+		/// <summary>
+		/// Adds the specified request <paramref name="header"/> with the specified <paramref name="value"/> to the collection.
+		/// </summary>
+		/// <param name="header">
+		/// A <see cref="HttpRequestHeader"/> is a request header to add.
+		/// </param>
+		/// <param name="value">
+		/// A <see cref="string"/> that contains the value of the header to add.
+		/// </param>
+		/// <exception cref="InvalidOperationException">
+		/// The current <see cref="WebHeaderCollection"/> instance does not allow any of <see cref="HttpRequestHeader"/> values.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		///   <para>
+		///   <paramref name="header"/> is a restricted header.
+		///   </para>
+		///   <para>
+		///   -or-
+		///   </para>
+		///   <para>
+		///   <paramref name="value"/> contains invalid characters.
+		///   </para>
+		/// </exception>
+		/// <exception cref="ArgumentOutOfRangeException">
+		/// The length of <paramref name="value"/> is greater than 65535.
+		/// </exception>
+		public void Add (HttpRequestHeader header, string value)
+		{
+			DoWithCheckingState (AddWithoutCheckingName, Convert (header), value, false, true);
+		}
+
+		/// <summary>
+		/// Adds the specified response <paramref name="header"/> with the specified <paramref name="value"/> to the collection.
+		/// </summary>
+		/// <param name="header">
+		/// A <see cref="HttpResponseHeader"/> is a response header to add.
+		/// </param>
+		/// <param name="value">
+		/// A <see cref="string"/> that contains the value of the header to add.
+		/// </param>
+		/// <exception cref="InvalidOperationException">
+		/// The current <see cref="WebHeaderCollection"/> instance does not allow any of <see cref="HttpResponseHeader"/> values.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		///   <para>
+		///   <paramref name="header"/> is a restricted header.
+		///   </para>
+		///   <para>
+		///   -or-
+		///   </para>
+		///   <para>
+		///   <paramref name="value"/> contains invalid characters.
+		///   </para>
+		/// </exception>
+		/// <exception cref="ArgumentOutOfRangeException">
+		/// The length of <paramref name="value"/> is greater than 65535.
+		/// </exception>
+		public void Add (HttpResponseHeader header, string value)
+		{
+			DoWithCheckingState (AddWithoutCheckingName, Convert (header), value, true, true);
+		}
+
+		/// <summary>
+		/// Adds a header with the specified <paramref name="name"/> and <paramref name="value"/> to the collection.
+		/// </summary>
+		/// <param name="name">
+		/// A <see cref="string"/> that contains the name of the header to add.
+		/// </param>
+		/// <param name="value">
+		/// A <see cref="string"/> that contains the value of the header to add.
+		/// </param>
+		/// <exception cref="ArgumentNullException">
+		/// <paramref name="name"/> is <see langword="null"/> or <see cref="String.Empty"/>.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		///   <para>
+		///   <paramref name="name"/> or <paramref name="value"/> contains invalid characters.
+		///   </para>
+		///   <para>
+		///   -or-
+		///   </para>
+		///   <para>
+		///   <paramref name="name"/> is a restricted header name.
+		///   </para>
+		/// </exception>
+		/// <exception cref="ArgumentOutOfRangeException">
+		/// The length of <paramref name="value"/> is greater than 65535.
+		/// </exception>
+		/// <exception cref="InvalidOperationException">
+		/// The current <see cref="WebHeaderCollection"/> instance does not allow the header <paramref name="name"/>.
+		/// </exception>
+		public override void Add (string name, string value)
+		{
+			Add (name, value, false);
+		}
+
+		/// <summary>
+		/// Removes all headers from the collection.
+		/// </summary>
+		public override void Clear ()
+		{
+			base.Clear ();
+			state = HttpHeaderType.Unspecified;
+		}
+
+		/// <summary>
+		/// Get the value of the header with the specified <paramref name="index"/> in the collection.
+		/// </summary>
+		/// <returns>
+		/// A <see cref="string"/> that receives the value of the header.
+		/// </returns>
+		/// <param name="index">
+		/// An <see cref="int"/> that is the zero-based index of the header to get.
+		/// </param>
+		public override string Get (int index)
+		{
+			return base.Get (index);
+		}
+
+		/// <summary>
+		/// Get the value of the header with the specified <paramref name="name"/> in the collection.
+		/// </summary>
+		/// <returns>
+		/// A <see cref="string"/> that receives the value of the header.
+		/// <see langword="null"/> if there is no header with <paramref name="name"/> in the collection.
+		/// </returns>
+		/// <param name="name">
+		/// A <see cref="string"/> that contains the name of the header to get.
+		/// </param>
+		public override string Get (string name)
+		{
+			return base.Get (name);
+		}
+
+		/// <summary>
+		/// Gets the enumerator to use to iterate through the <see cref="WebHeaderCollection"/>.
+		/// </summary>
+		/// <returns>
+		/// An instance of an implementation of the <see cref="IEnumerator"/> interface
+		/// to use to iterate through the <see cref="WebHeaderCollection"/>.
+		/// </returns>
+		public override IEnumerator GetEnumerator ()
+		{
+			return base.GetEnumerator ();
+		}
+
+		/// <summary>
+		/// Get the header name at the specified <paramref name="index"/> position in the collection.
+		/// </summary>
+		/// <returns>
+		/// A <see cref="string"/> that receives the header name.
+		/// </returns>
+		/// <param name="index">
+		/// An <see cref="int"/> is the zero-based index of the key to get from the collection.
+		/// </param>
+		public override string GetKey (int index)
+		{
+			return base.GetKey (index);
+		}
+
+		/// <summary>
+		/// Gets an array of header values stored in the specified <paramref name="header"/> name.
+		/// </summary>
+		/// <returns>
+		/// An array of <see cref="string"/> that receives the header values.
+		/// </returns>
+		/// <param name="header">
+		/// A <see cref="string"/> that contains a header name.
+		/// </param>
+		public override string [] GetValues (string header)
+		{
+			string [] values = base.GetValues (header);
+			return values.IsNull () || values.Length == 0
+			       ? null
+			       : values;
+		}
+
+		/// <summary>
+		/// Gets an array of header values stored in the specified <paramref name="index"/> position of the header collection.
+		/// </summary>
+		/// <returns>
+		/// An array of <see cref="string"/> that receives the header values.
+		/// </returns>
+		/// <param name="index">
+		/// An <see cref="int"/> is the zero-based index of the header in the collection.
+		/// </param>
+		public override string [] GetValues (int index)
+		{
+			string [] values = base.GetValues (index);
+			return values.IsNull () || values.Length == 0
+			       ? null
+			       : values;
+		}
+
+		/// <summary>
+		/// Populates the specified <see cref="SerializationInfo"/> with the data to need to
+		/// serialize the <see cref="WebHeaderCollection"/> object.
+		/// </summary>
+		/// <param name="serializationInfo">
+		/// A <see cref="SerializationInfo"/> that holds the data to need to serialize the <see cref="WebHeaderCollection"/> object.
+		/// </param>
+		/// <param name="streamingContext">
+		/// A <see cref="StreamingContext"/> that specifies the destination for the serialization.
+		/// </param>
+		/// <exception cref="ArgumentNullException">
+		/// <paramref name="serializationInfo"/> is <see langword="null"/>.
+		/// </exception>
+		[SecurityPermission (SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.SerializationFormatter)]
+		public override void GetObjectData (
+			SerializationInfo serializationInfo, StreamingContext streamingContext)
+		{
+			if (serializationInfo.IsNull ())
+				throw new ArgumentNullException ("serializationInfo");
+
+			serializationInfo.AddValue ("InternallyCreated", internallyCreated);
+			serializationInfo.AddValue ("State", (int) state);
+
+			int count = Count;
+			serializationInfo.AddValue ("Count", count);
+			count.Times (i => {
+				serializationInfo.AddValue (i.ToString (), GetKey (i));
+				serializationInfo.AddValue ((count + i).ToString (), Get (i));
+			});
+		}
+
+		/// <summary>
+		/// Determines whether the specified header can be set for the request.
+		/// </summary>
+		/// <returns>
+		/// <c>true</c> if the header is restricted; otherwise, <c>false</c>.
+		/// </returns>
+		/// <param name="headerName">
+		/// A <see cref="string"/> that contains the name of the header to test.
+		/// </param>
+		/// <exception cref="ArgumentNullException">
+		/// <paramref name="headerName"/> is <see langword="null"/> or <see cref="String.Empty"/>.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		/// <paramref name="headerName"/> contains invalid characters.
+		/// </exception>
+		public static bool IsRestricted (string headerName)
+		{
+			return IsRestricted (headerName, false);
+		}
+
+		/// <summary>
+		/// Determines whether the specified header can be set for the request or the response.
+		/// </summary>
+		/// <returns>
+		/// <c>true</c> if the header is restricted; otherwise, <c>false</c>.
+		/// </returns>
+		/// <param name="headerName">
+		/// A <see cref="string"/> that contains the name of the header to test.
+		/// </param>
+		/// <param name="response">
+		/// <c>true</c> if does the test for the response; for the request, <c>false</c>.
+		/// </param>
+		/// <exception cref="ArgumentNullException">
+		/// <paramref name="headerName"/> is <see langword="null"/> or <see cref="String.Empty"/>.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		/// <paramref name="headerName"/> contains invalid characters.
+		/// </exception>
+		public static bool IsRestricted (string headerName, bool response)
+		{
+			return ContainsInRestricted (CheckName (headerName), response);
+		}
+
+		/// <summary>
+		/// Implements the <see cref="ISerializable"/> interface and raises the deserialization event
+		/// when the deserialization is complete.
+		/// </summary>
+		/// <param name="sender">
+		/// An <see cref="object"/> that contains the source of the deserialization event.
+		/// </param>
+		public override void OnDeserialization (object sender)
+		{
+		}
+
+		/// <summary>
+		/// Removes the specified header from the collection.
+		/// </summary>
+		/// <param name="header">
+		/// A <see cref="HttpRequestHeader"/> to remove from the collection.
+		/// </param>
+		/// <exception cref="InvalidOperationException">
+		/// The current <see cref="WebHeaderCollection"/> instance does not allow any of <see cref="HttpRequestHeader"/> values.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		/// <paramref name="header"/> is a restricted header.
+		/// </exception>
+		public void Remove (HttpRequestHeader header)
+		{
+			DoWithCheckingState (RemoveWithoutCheckingName, Convert (header), null, false, false);
+		}
+
+		/// <summary>
+		/// Removes the specified header from the collection.
+		/// </summary>
+		/// <param name="header">
+		/// A <see cref="HttpResponseHeader"/> to remove from the collection.
+		/// </param>
+		/// <exception cref="InvalidOperationException">
+		/// The current <see cref="WebHeaderCollection"/> instance does not allow any of <see cref="HttpResponseHeader"/> values.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		/// <paramref name="header"/> is a restricted header.
+		/// </exception>
+		public void Remove (HttpResponseHeader header)
+		{
+			DoWithCheckingState (RemoveWithoutCheckingName, Convert (header), null, true, false);
+		}
+
+		/// <summary>
+		/// Removes the specified header from the collection.
+		/// </summary>
+		/// <param name="name">
+		/// A <see cref="string"/> that contains the name of the header to remove from the collection.
+		/// </param>
+		/// <exception cref="ArgumentNullException">
+		/// <paramref name="name"/> is <see langword="null"/> or <see cref="String.Empty"/>.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		///   <para>
+		///   <paramref name="name"/> contains invalid characters.
+		///   </para>
+		///   <para>
+		///   -or-
+		///   </para>
+		///   <para>
+		///   <paramref name="name"/> is a restricted header name.
+		///   </para>
+		/// </exception>
+		/// <exception cref="InvalidOperationException">
+		/// The current <see cref="WebHeaderCollection"/> instance does not allow the header <paramref name="name"/>.
+		/// </exception>
+		public override void Remove (string name)
+		{
+			DoWithCheckingState (RemoveWithoutCheckingName, CheckName (name), null, false);
+		}
+
+		/// <summary>
+		/// Sets the specified header to the specified value.
+		/// </summary>
+		/// <param name="header">
+		/// A <see cref="HttpRequestHeader"/> to set.
+		/// </param>
+		/// <param name="value">
+		/// A <see cref="string"/> that contains the value of the header to set.
+		/// </param>
+		/// <exception cref="InvalidOperationException">
+		/// The current <see cref="WebHeaderCollection"/> instance does not allow any of <see cref="HttpRequestHeader"/> values.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		///   <para>
+		///   <paramref name="header"/> is a restricted header.
+		///   </para>
+		///   <para>
+		///   -or-
+		///   </para>
+		///   <para>
+		///   <paramref name="value"/> contains invalid characters.
+		///   </para>
+		/// </exception>
+		/// <exception cref="ArgumentOutOfRangeException">
+		/// The length of <paramref name="value"/> is greater than 65535.
+		/// </exception>
+		public void Set (HttpRequestHeader header, string value)
+		{
+			DoWithCheckingState (SetWithoutCheckingName, Convert (header), value, false, true);
+		}
+
+		/// <summary>
+		/// Sets the specified header to the specified value.
+		/// </summary>
+		/// <param name="header">
+		/// A <see cref="HttpResponseHeader"/> to set.
+		/// </param>
+		/// <param name="value">
+		/// A <see cref="string"/> that contains the value of the header to set.
+		/// </param>
+		/// <exception cref="InvalidOperationException">
+		/// The current <see cref="WebHeaderCollection"/> instance does not allow any of <see cref="HttpResponseHeader"/> values.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		///   <para>
+		///   <paramref name="header"/> is a restricted header.
+		///   </para>
+		///   <para>
+		///   -or-
+		///   </para>
+		///   <para>
+		///   <paramref name="value"/> contains invalid characters.
+		///   </para>
+		/// </exception>
+		/// <exception cref="ArgumentOutOfRangeException">
+		/// The length of <paramref name="value"/> is greater than 65535.
+		/// </exception>
+		public void Set (HttpResponseHeader header, string value)
+		{
+			DoWithCheckingState (SetWithoutCheckingName, Convert (header), value, true, true);
+		}
+
+		/// <summary>
+		/// Sets the specified header to the specified value.
+		/// </summary>
+		/// <param name="name">
+		/// A <see cref="string"/> that contains the name of the header to set.
+		/// </param>
+		/// <param name="value">
+		/// A <see cref="string"/> that contains the value of the header to set.
+		/// </param>
+		/// <exception cref="ArgumentNullException">
+		/// <paramref name="name"/> is <see langword="null"/> or <see cref="String.Empty"/>.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		///   <para>
+		///   <paramref name="name"/> or <paramref name="value"/> contain invalid characters.
+		///   </para>
+		///   <para>
+		///   -or-
+		///   </para>
+		///   <para>
+		///   <paramref name="name"/> is a restricted header name.
+		///   </para>
+		/// </exception>
+		/// <exception cref="ArgumentOutOfRangeException">
+		/// The length of <paramref name="value"/> is greater than 65535.
+		/// </exception>
+		/// <exception cref="InvalidOperationException">
+		/// The current <see cref="WebHeaderCollection"/> instance does not allow the header <paramref name="name"/>.
+		/// </exception>
+		public override void Set (string name, string value)
+		{
+			DoWithCheckingState (SetWithoutCheckingName, CheckName (name), value, true);
+		}
+
+		/// <summary>
+		/// Converts the current <see cref="WebHeaderCollection"/> to an array of <see cref="byte"/>.
+		/// </summary>
+		/// <returns>
+		/// An array of <see cref="byte"/> that receives the converted current <see cref="WebHeaderCollection"/>.
+		/// </returns>
+		public byte [] ToByteArray ()
+		{
+			return Encoding.UTF8.GetBytes (ToString ());
+		}
+
+		/// <summary>
+		/// Returns a <see cref="string"/> that represents the current <see cref="WebHeaderCollection"/>.
+		/// </summary>
+		/// <returns>
+		/// A <see cref="string"/> that represents the current <see cref="WebHeaderCollection"/>.
+		/// </returns>
+		public override string ToString ()
+		{
+			var sb = new StringBuilder();
+			Count.Times (i => {
+				sb.AppendFormat ("{0}: {1}\r\n", GetKey (i), Get (i));
+			});
+
+			return sb.Append ("\r\n").ToString ();
+		}
+
+		#endregion
 	}
 }

@@ -1,6 +1,6 @@
 #region License
 /*
- * IServiceHost.cs
+ * HttpRequestEventArgs.cs
  *
  * The MIT License
  *
@@ -27,51 +27,48 @@
 #endregion
 
 using System;
-using WebSocketSharp.Net.WebSockets;
+using WebSocketSharp.Net;
 
 namespace WebSocketSharp.Server {
 
   /// <summary>
-  /// Exposes the methods and properties for the WebSocket service host.
+  /// Contains the event data associated with the HTTP request events of the <see cref="HttpServer"/> class.
   /// </summary>
   /// <remarks>
+  /// An HTTP request event occurs when a <see cref="HttpServer"/> instance receives an HTTP request.
+  /// If you want to get the HTTP request objects, you should access the <see cref="Request"/> property.
+  /// If you want to get the HTTP response objects to send, you should access the <see cref="Response"/> property.
   /// </remarks>
-  public interface IServiceHost {
+  public class HttpRequestEventArgs : EventArgs
+  {
+    #region Internal Constructors
+
+    internal HttpRequestEventArgs(HttpListenerContext context)
+    {
+      Request = context.Request;
+      Response = context.Response;
+    }
+
+    #endregion
+
+    #region Public Properties
 
     /// <summary>
-    /// Gets or sets a value indicating whether the WebSocket service host cleans up the inactive service
-    /// instances periodically.
+    /// Gets the HTTP request objects sent from a client.
     /// </summary>
     /// <value>
-    /// <c>true</c> if the WebSocket service host cleans up the inactive service instances periodically;
-    /// otherwise, <c>false</c>.
+    /// A <see cref="HttpListenerRequest"/> that contains the HTTP request objects.
     /// </value>
-    bool Sweeping { get; set; }
+    public HttpListenerRequest Request { get; private set; }
 
     /// <summary>
-    /// Binds the specified <see cref="WebSocketContext"/> to a <see cref="WebSocketService"/> instance.
+    /// Gets the HTTP response objects to send to the client in response to the client's request.
     /// </summary>
-    /// <param name="context">
-    /// A <see cref="WebSocketContext"/> that contains the WebSocket connection request objects to bind.
-    /// </param>
-    void BindWebSocket(WebSocketContext context);
+    /// <value>
+    /// A <see cref="HttpListenerResponse"/> that contains the HTTP response objects.
+    /// </value>
+    public HttpListenerResponse Response { get; private set; }
 
-    /// <summary>
-    /// Broadcasts the specified <see cref="string"/> to all service clients.
-    /// </summary>
-    /// <param name="data">
-    /// A <see cref="string"/> to broadcast.
-    /// </param>
-    void Broadcast(string data);
-
-    /// <summary>
-    /// Starts the WebSocket service host.
-    /// </summary>
-    void Start();
-
-    /// <summary>
-    /// Stops the WebSocket service host.
-    /// </summary>
-    void Stop();
+    #endregion
   }
 }

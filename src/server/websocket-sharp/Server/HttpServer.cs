@@ -1,10 +1,10 @@
-#region MIT License
+#region License
 /*
  * HttpServer.cs
  *
  * The MIT License
  *
- * Copyright (c) 2012 sta.blockhead
+ * Copyright (c) 2012-2013 sta.blockhead
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,26 +36,60 @@ using WebSocketSharp.Net;
 
 namespace WebSocketSharp.Server {
 
+  /// <summary>
+  /// Provides a simple HTTP server that allows to accept the WebSocket connection requests.
+  /// </summary>
+  /// <remarks>
+  /// <para>
+  /// The HttpServer instance can provide the multi WebSocket services.
+  /// </para>
+  /// <para>
+  /// <para>
+  /// The HttpServer instance can set the document root path of server using
+  /// the application configuration file or <see cref="RootPath"/> property.
+  /// </para>
+  /// <code lang="xml">
+  /// &lt;?xml version="1.0" encoding="utf-8"?&gt;
+  /// &lt;configuration&gt;
+  ///   &lt;appSettings&gt;
+  ///     &lt;add key="RootPath" value="./Public" /&gt;
+  ///   &lt;/appSettings&gt;
+  /// &lt;/configuration&gt;
+  /// </code>
+  /// </para>
+  /// </remarks>
   public class HttpServer {
 
-    #region Fields
+    #region Private Fields
 
-    private Thread         _acceptRequestThread;
-    private bool           _isWindows;
-    private HttpListener   _listener;
-    private int            _port;
-    private string         _rootPath;
-    private ServiceManager _services;
+    private HttpListener       _listener;
+    private bool               _listening;
+    private int                _port;
+    private Thread             _receiveRequestThread;
+    private string             _rootPath;
+    private ServiceHostManager _svcHosts;
+    private bool               _windows;
 
     #endregion
 
-    #region Constructors
+    #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HttpServer"/> class that listens for incoming requests
+    /// on port 80.
+    /// </summary>
     public HttpServer()
       : this(80)
     {
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HttpServer"/> class that listens for incoming requests
+    /// on the specified <paramref name="port"/>.
+    /// </summary>
+    /// <param name="port">
+    /// An <see cref="int"/> that contains a port number. 
+    /// </param>
     public HttpServer(int port)
     {
       _port = port;
@@ -64,55 +98,281 @@ namespace WebSocketSharp.Server {
 
     #endregion
 
-    #region Properties
+    #region Public Properties
 
-    public int Port {
-      get { return _port; }
-    }
-
-    public IEnumerable<string> ServicePath {
+    /// <summary>
+    /// Gets a value indicating whether the server has been started.
+    /// </summary>
+    /// <value>
+    /// <c>true</c> if the server has been started; otherwise, <c>false</c>.
+    /// </value>
+    public bool IsListening {
       get {
-        return _services.Path;
+        return _listening;
       }
     }
 
-    public bool Sweeped {
+    /// <summary>
+    /// Gets the port on which to listen for incoming requests.
+    /// </summary>
+    /// <value>
+    /// An <see cref="int"/> that contains a port number.
+    /// </value>
+    public int Port {
       get {
-        return _services.Sweeped;
+        return _port;
+      }
+    }
+
+    /// <summary>
+    /// Gets or sets the document root path of server.
+    /// </summary>
+    /// <value>
+    /// An <see cref="string"/> that contains the document root path of server.
+    /// The default value is set from the application configuration file if is available;
+    /// otherwise, <c>./Public</c>.
+    /// </value>
+    public string RootPath {
+      get {
+        return _rootPath;
       }
 
       set {
-        _services.Sweeped = value;
+        if (!_listening)
+          _rootPath = value;
+      }
+    }
+
+    /// <summary>
+    /// Gets the collection of paths associated with the every WebSocket services that the server provides.
+    /// </summary>
+    /// <value>
+    /// An IEnumerable&lt;string&gt; that contains the collection of paths.
+    /// </value>
+    public IEnumerable<string> ServicePaths {
+      get {
+        return _svcHosts.Paths;
+      }
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the server cleans up the inactive WebSocket service
+    /// instances periodically.
+    /// </summary>
+    /// <value>
+    /// <c>true</c> if the server cleans up the inactive WebSocket service instances every 60 seconds;
+    /// otherwise, <c>false</c>. The default value is <c>true</c>.
+    /// </value>
+    public bool Sweeping {
+      get {
+        return _svcHosts.Sweeping;
+      }
+
+      set {
+        _svcHosts.Sweeping = value;
       }
     }
 
     #endregion
 
-    #region Events
+    #region Public Events
 
-    public event EventHandler<ResponseEventArgs> OnConnect;
-    public event EventHandler<ResponseEventArgs> OnDelete;
-    public event EventHandler<ErrorEventArgs>    OnError;
-    public event EventHandler<ResponseEventArgs> OnGet;
-    public event EventHandler<ResponseEventArgs> OnHead;
-    public event EventHandler<ResponseEventArgs> OnOptions;
-    public event EventHandler<ResponseEventArgs> OnPatch;
-    public event EventHandler<ResponseEventArgs> OnPost;
-    public event EventHandler<ResponseEventArgs> OnPut;
-    public event EventHandler<ResponseEventArgs> OnTrace;
+    /// <summary>
+    /// Occurs when the server receives an HTTP CONNECT request.
+    /// </summary>
+    public event EventHandler<HttpRequestEventArgs> OnConnect;
+
+    /// <summary>
+    /// Occurs when the server receives an HTTP DELETE request.
+    /// </summary>
+    public event EventHandler<HttpRequestEventArgs> OnDelete;
+
+    /// <summary>
+    /// Occurs when the server gets an error.
+    /// </summary>
+    public event EventHandler<ErrorEventArgs> OnError;
+
+    /// <summary>
+    /// Occurs when the server receives an HTTP GET request.
+    /// </summary>
+    public event EventHandler<HttpRequestEventArgs> OnGet;
+
+    /// <summary>
+    /// Occurs when the server receives an HTTP HEAD request.
+    /// </summary>
+    public event EventHandler<HttpRequestEventArgs> OnHead;
+
+    /// <summary>
+    /// Occurs when the server receives an HTTP OPTIONS request.
+    /// </summary>
+    public event EventHandler<HttpRequestEventArgs> OnOptions;
+
+    /// <summary>
+    /// Occurs when the server receives an HTTP PATCH request.
+    /// </summary>
+    public event EventHandler<HttpRequestEventArgs> OnPatch;
+
+    /// <summary>
+    /// Occurs when the server receives an HTTP POST request.
+    /// </summary>
+    public event EventHandler<HttpRequestEventArgs> OnPost;
+
+    /// <summary>
+    /// Occurs when the server receives an HTTP PUT request.
+    /// </summary>
+    public event EventHandler<HttpRequestEventArgs> OnPut;
+
+    /// <summary>
+    /// Occurs when the server receives an HTTP TRACE request.
+    /// </summary>
+    public event EventHandler<HttpRequestEventArgs> OnTrace;
 
     #endregion
 
     #region Private Methods
 
-    private void acceptRequest()
+    private void init()
+    {
+      _listener = new HttpListener();
+      _listening = false;
+      _rootPath = getRootPath();
+      _svcHosts = new ServiceHostManager();
+
+      _windows = false;
+      var os = Environment.OSVersion;
+      if (os.Platform != PlatformID.Unix && os.Platform != PlatformID.MacOSX)
+        _windows = true;
+
+      var prefix = String.Format(
+        "http{0}://*:{1}/", _port == 443 ? "s" : String.Empty, _port);
+      _listener.Prefixes.Add(prefix);
+    }
+
+    private static string getRootPath()
+    {
+      string rootPath = null;
+      try {
+        rootPath = ConfigurationManager.AppSettings["RootPath"];
+      }
+      catch {
+      }
+
+      return rootPath.IsNullOrEmpty()
+             ? "./Public"
+             : rootPath;
+    }
+
+    private void onError(string message)
+    {
+      #if DEBUG
+      var callerFrame = new StackFrame(1);
+      var caller = callerFrame.GetMethod();
+      Console.WriteLine("HTTPSV: Error@{0}: {1}", caller.Name, message);
+      #endif
+      OnError.Emit(this, new ErrorEventArgs(message));
+    }
+
+    private void onRequest(HttpListenerContext context)
+    {
+      var req = context.Request;
+      var res = context.Response;
+      var eventArgs = new HttpRequestEventArgs(context);
+
+      if (req.HttpMethod == "GET" && !OnGet.IsNull())
+      {
+        OnGet(this, eventArgs);
+        return;
+      }
+
+      if (req.HttpMethod == "HEAD" && !OnHead.IsNull())
+      {
+        OnHead(this, eventArgs);
+        return;
+      }
+
+      if (req.HttpMethod == "POST" && !OnPost.IsNull())
+      {
+        OnPost(this, eventArgs);
+        return;
+      }
+
+      if (req.HttpMethod == "PUT" && !OnPut.IsNull())
+      {
+        OnPut(this, eventArgs);
+        return;
+      }
+
+      if (req.HttpMethod == "DELETE" && !OnDelete.IsNull())
+      {
+        OnDelete(this, eventArgs);
+        return;
+      }
+
+      if (req.HttpMethod == "OPTIONS" && !OnOptions.IsNull())
+      {
+        OnOptions(this, eventArgs);
+        return;
+      }
+
+      if (req.HttpMethod == "TRACE" && !OnTrace.IsNull())
+      {
+        OnTrace(this, eventArgs);
+        return;
+      }
+
+      if (req.HttpMethod == "CONNECT" && !OnConnect.IsNull())
+      {
+        OnConnect(this, eventArgs);
+        return;
+      }
+
+      if (req.HttpMethod == "PATCH" && !OnPatch.IsNull())
+      {
+        OnPatch(this, eventArgs);
+        return;
+      }
+
+      res.StatusCode = (int)HttpStatusCode.NotImplemented;
+    }
+
+    private void processRequestAsync(HttpListenerContext context)
+    {
+      WaitCallback callback = (state) =>
+      {
+        var req = context.Request;
+        var res = context.Response;
+
+        try
+        {
+          if (req.IsUpgradeTo("websocket"))
+          {
+            if (upgradeToWebSocket(context))
+              return;
+          }
+          else
+          {
+            onRequest(context);
+          }
+
+          res.Close();
+        }
+        catch (Exception ex)
+        {
+          onError(ex.Message);
+        }
+      };
+
+      ThreadPool.QueueUserWorkItem(callback);
+    }
+
+    private void receiveRequest()
     {
       while (true)
       {
         try
         {
           var context = _listener.GetContext();
-          respondAsync(context);
+          processRequestAsync(context);
         }
         catch (HttpListenerException)
         {
@@ -127,164 +387,27 @@ namespace WebSocketSharp.Server {
       }
     }
 
-    private void configureFromConfigFile()
+    private void startReceiveRequestThread()
     {
-      _rootPath = ConfigurationManager.AppSettings["RootPath"];
-    }
-
-    private void init()
-    {
-      _isWindows = false;
-      _listener  = new HttpListener();
-      _services  = new ServiceManager();
-
-      var os = Environment.OSVersion;
-      if (os.Platform != PlatformID.Unix && os.Platform != PlatformID.MacOSX)
-        _isWindows = true;
-
-      var prefix = String.Format(
-        "http{0}://*:{1}/", _port == 443 ? "s" : String.Empty, _port);
-      _listener.Prefixes.Add(prefix);
-
-      configureFromConfigFile();
-    }
-
-    private bool isUpgrade(HttpListenerRequest request, string value)
-    {
-      if (!request.Headers.Exists("Upgrade", value))
-        return false;
-
-      if (!request.Headers.Exists("Connection", "Upgrade"))
-        return false;
-
-      return true;
-    }
-
-    private void onError(string message)
-    {
-      #if DEBUG
-      var callerFrame = new StackFrame(1);
-      var caller      = callerFrame.GetMethod();
-      Console.WriteLine("HTTPSV: Error@{0}: {1}", caller.Name, message);
-      #endif
-      OnError.Emit(this, new ErrorEventArgs(message));
-    }
-
-    private void respond(HttpListenerContext context)
-    {
-      var req = context.Request;
-      var res = context.Response;
-      var eventArgs = new ResponseEventArgs(context);
-
-      if (req.HttpMethod == "GET" && OnGet != null)
-      {
-        OnGet(this, eventArgs);
-        return;
-      }
-
-      if (req.HttpMethod == "HEAD" && OnHead != null)
-      {
-        OnHead(this, eventArgs);
-        return;
-      }
-
-      if (req.HttpMethod == "POST" && OnPost != null)
-      {
-        OnPost(this, eventArgs);
-        return;
-      }
-
-      if (req.HttpMethod == "PUT" && OnPut != null)
-      {
-        OnPut(this, eventArgs);
-        return;
-      }
-
-      if (req.HttpMethod == "DELETE" && OnDelete != null)
-      {
-        OnDelete(this, eventArgs);
-        return;
-      }
-
-      if (req.HttpMethod == "OPTIONS" && OnOptions != null)
-      {
-        OnOptions(this, eventArgs);
-        return;
-      }
-
-      if (req.HttpMethod == "TRACE" && OnTrace != null)
-      {
-        OnTrace(this, eventArgs);
-        return;
-      }
-
-      if (req.HttpMethod == "CONNECT" && OnConnect != null)
-      {
-        OnConnect(this, eventArgs);
-        return;
-      }
-
-      if (req.HttpMethod == "PATCH" && OnPatch != null)
-      {
-        OnPatch(this, eventArgs);
-        return;
-      }
-
-      res.StatusCode = (int)HttpStatusCode.NotImplemented;
-    }
-
-    private void respondAsync(HttpListenerContext context)
-    {
-      WaitCallback respondCb = (state) =>
-      {
-        var req = context.Request;
-        var res = context.Response;
-
-        try
-        {
-          if (isUpgrade(req, "websocket"))
-          {
-            if (upgradeToWebSocket(context))
-              return;
-          }
-          else
-          {
-            respond(context);
-          }
-
-          res.Close();
-        }
-        catch (Exception ex)
-        {
-          onError(ex.Message);
-        }
-      };
-
-      ThreadPool.QueueUserWorkItem(respondCb);
-    }
-
-    private void startAcceptRequestThread()
-    {
-      _acceptRequestThread = new Thread(new ThreadStart(acceptRequest)); 
-      _acceptRequestThread.IsBackground = true;
-      _acceptRequestThread.Start();
+      _receiveRequestThread = new Thread(new ThreadStart(receiveRequest)); 
+      _receiveRequestThread.IsBackground = true;
+      _receiveRequestThread.Start();
     }
 
     private bool upgradeToWebSocket(HttpListenerContext context)
     {
-      var res       = context.Response;
+      var res = context.Response;
       var wsContext = context.AcceptWebSocket();
-      var socket    = wsContext.WebSocket;
-      var path      = wsContext.Path.UrlDecode();
+      var path = wsContext.Path.UrlDecode();
 
       IServiceHost svcHost;
-      if (!_services.TryGetServiceHost(path, out svcHost))
+      if (!_svcHosts.TryGetServiceHost(path, out svcHost))
       {
         res.StatusCode = (int)HttpStatusCode.NotImplemented;
         return false;
       }
 
-      svcHost.BindWebSocket(socket);
+      svcHost.BindWebSocket(wsContext);
       return true;
     }
 
@@ -292,7 +415,16 @@ namespace WebSocketSharp.Server {
 
     #region Public Methods
 
-    public void AddService<T>(string absPath)
+    /// <summary>
+    /// Adds the specified type WebSocket service.
+    /// </summary>
+    /// <param name="absPath">
+    /// A <see cref="string"/> that contains an absolute path associated with the WebSocket service.
+    /// </param>
+    /// <typeparam name="T">
+    /// The type of the WebSocket service. The T must inherit the <see cref="WebSocketService"/> class.
+    /// </typeparam>
+    public void AddWebSocketService<T>(string absPath)
       where T : WebSocketService, new()
     {
       string msg;
@@ -304,35 +436,58 @@ namespace WebSocketSharp.Server {
 
       var svcHost = new WebSocketServiceHost<T>();
       svcHost.Uri = absPath.ToUri();
-      if (!Sweeped)
-        svcHost.Sweeped = Sweeped;
+      if (!Sweeping)
+        svcHost.Sweeping = false;
 
-      _services.Add(absPath, svcHost);
+      _svcHosts.Add(absPath, svcHost);
     }
 
+    /// <summary>
+    /// Gets the contents of the file with the specified <paramref name="path"/>.
+    /// </summary>
+    /// <returns>
+    /// An array of <see cref="byte"/> that contains the contents of the file if exists;
+    /// otherwise, <see langword="null"/>.
+    /// </returns>
+    /// <param name="path">
+    /// A <see cref="string"/> that contains a virtual path to the file to get.
+    /// </param>
     public byte[] GetFile(string path)
     {
       var filePath = _rootPath + path;
-      if (_isWindows)
+      if (_windows)
         filePath = filePath.Replace("/", "\\");
 
-      if (File.Exists(filePath))
-        return File.ReadAllBytes(filePath);
-
-      return null;
+      return File.Exists(filePath)
+             ? File.ReadAllBytes(filePath)
+             : null;
     }
 
+    /// <summary>
+    /// Starts to receive the HTTP requests.
+    /// </summary>
     public void Start()
     {
+      if (_listening)
+        return;
+
       _listener.Start();
-      startAcceptRequestThread();
+      startReceiveRequestThread();
+      _listening = true;
     }
 
+    /// <summary>
+    /// Stops receiving the HTTP requests.
+    /// </summary>
     public void Stop()
     {
+      if (!_listening)
+        return;
+
       _listener.Close();
-      _acceptRequestThread.Join(5 * 1000);
-      _services.Stop();
+      _receiveRequestThread.Join(5 * 1000);
+      _svcHosts.Stop();
+      _listening = false;
     }
 
     #endregion

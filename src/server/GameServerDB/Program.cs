@@ -20,17 +20,16 @@ namespace GameServerDB
         {
             LogConsole._Load();
             LogDebug.debug = true;
-            _SQL.Init("localhost", "root", "13456", "dbbase", 3306);
-            var wssv = new WebSocketServiceHost<Serverb>("ws://192.168.1.5:8085");
+            _SQL.Init("localhost", "root", "123456", "db_clone", 3306);
+            var wssv = new WebSocketServiceHost<Serverb>("ws://192.168.1.5:9002");
             
             wssv.OnError += (sender, e) =>
                 {
-                    Console.WriteLine("[WS] error", "WS: Error: " + e.Message, "notification-message-im");
+                    LogConsole.Show("[WS]: Error {0} ", e.Message);
                 };
 
             wssv.Start();
-            
-            Console.WriteLine("WebSocket Server listening on port: {0}", wssv.Port);
+            LogConsole.Show("Server Listening on port: {0}", wssv.Port);
             while (true)
             {
                 Thread.Sleep(1000);

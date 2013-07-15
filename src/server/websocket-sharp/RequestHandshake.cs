@@ -1,4 +1,4 @@
-#region MIT License
+#region License
 /*
  * RequestHandshake.cs
  *
@@ -28,6 +28,7 @@
 
 using System;
 using System.Collections.Specialized;
+using System.Linq;
 using System.Text;
 using WebSocketSharp.Net;
 using WebSocketSharp.Net.WebSockets;
@@ -36,13 +37,13 @@ namespace WebSocketSharp {
 
   internal class RequestHandshake : Handshake
   {
-    #region Private Field
+    #region Private Fields
 
     private NameValueCollection _queryString;
 
     #endregion
 
-    #region Private Constructor
+    #region Private Constructors
 
     private RequestHandshake()
     {
@@ -50,48 +51,46 @@ namespace WebSocketSharp {
 
     #endregion
 
-    #region Public Constructor
+    #region Public Constructors
 
     public RequestHandshake(string uriString)
     {
       HttpMethod = "GET";
       RequestUri = uriString.ToUri();
-
+      AddHeader("User-Agent", "websocket-sharp/1.0");
       AddHeader("Upgrade", "websocket");
       AddHeader("Connection", "Upgrade");
     }
 
     #endregion
 
-    #region Properties
+    #region Public Properties
 
-    public string HttpMethod { get; private set; }
+    public CookieCollection Cookies {
+      get {
+        return Headers.GetCookies(false);
+      }
+    }
+
+    public string HttpMethod {
+      get; private set;
+    }
 
     public bool IsWebSocketRequest {
-
       get {
-        if (HttpMethod != "GET")
-          return false;
-
-        if (ProtocolVersion != HttpVersion.Version11)
-          return false;
-
-        if (!HeaderExists("Upgrade", "websocket"))
-          return false;
-
-        if (!HeaderExists("Connection", "Upgrade"))
-          return false;
-
-        if (!HeaderExists("Host"))
-          return false;
-
-        if (!HeaderExists("Sec-WebSocket-Key"))
-          return false;
-
-        if (!HeaderExists("Sec-WebSocket-Version"))
-          return false;
-
-        return true;
+        return HttpMethod != "GET"
+               ? false
+               : ProtocolVersion < HttpVersion.Version11
+                 ? false
+                 : !ContainsHeader("Upgrade", "websocket")
+                   ? false
+                   : !ContainsHeader("Connection", "Upgrade")
+                     ? false
+                     : !ContainsHeader("Host")
+                       ? false
+                       : !ContainsHeader("Sec-WebSocket-Key")
+                         ? false
+                         : ContainsHeader("Sec-WebSocket-Version");
       }
     }
 
@@ -104,7 +103,7 @@ namespace WebSocketSharp {
           var i = RawUrl.IndexOf('?');
           if (i > 0)
           {
-            var query      = RawUrl.Substring(i + 1);
+            var query = RawUrl.Substring(i + 1);
             var components = query.Split('&');
             foreach (var c in components)
             {
@@ -112,7 +111,7 @@ namespace WebSocketSharp {
               if (nv.Key != null)
               {
                 var name = nv.Key.UrlDecode();
-                var val  = nv.Value.UrlDecode();
+                var val = nv.Value.UrlDecode();
                 _queryString.Add(name, val);
               }
             }
@@ -125,28 +124,19 @@ namespace WebSocketSharp {
 
     public string RawUrl {
       get {
-        if (RequestUri.IsAbsoluteUri)
-          return RequestUri.PathAndQuery;
-
-        return RequestUri.OriginalString;
+        return RequestUri.IsAbsoluteUri
+               ? RequestUri.PathAndQuery
+               : RequestUri.OriginalString;
       }
     }
 
-    public Uri RequestUri { get; private set; }
+    public Uri RequestUri {
+      get; private set;
+    }
 
     #endregion
 
-    #region Public Static Methods
-
-    public static RequestHandshake Parse(WebSocketContext context)
-    {
-      return new RequestHandshake {
-        Headers         = context.Headers,
-        HttpMethod      = "GET",
-        RequestUri      = context.RequestUri,
-        ProtocolVersion = HttpVersion.Version11
-      };
-    }
+    #region Public Methods
 
     public static RequestHandshake Parse(string[] request)
     {
@@ -159,28 +149,54 @@ namespace WebSocketSharp {
 
       var headers = new WebHeaderCollection();
       for (int i = 1; i < request.Length; i++)
-        headers.Add(request[i]);
+        headers.SetInternal(request[i], false);
 
       return new RequestHandshake {
-        Headers         = headers,
-        HttpMethod      = requestLine[0],
-        RequestUri      = requestLine[1].ToUri(),
+        Headers = headers,
+        HttpMethod = requestLine[0],
+        RequestUri = requestLine[1].ToUri(),
         ProtocolVersion = new Version(requestLine[2].Substring(5))
       };
     }
 
-    #endregion
+    public static RequestHandshake Parse(WebSocketContext context)
+    {
+      return new RequestHandshake {
+        Headers = context.Headers,
+        HttpMethod = "GET",
+        RequestUri = context.RequestUri,
+        ProtocolVersion = HttpVersion.Version11
+      };
+    }
 
-    #region Public Method
+    public void SetCookies(CookieCollection cookies)
+    {
+      if (cookies == null || cookies.Count == 0)
+        return;
+
+      var sorted = cookies.Sorted.ToArray();
+      var header = new StringBuilder(sorted[0].ToString(), 64);
+      for (int i = 1; i < sorted.Length; i++)
+        if (!sorted[i].Expired)
+          header.AppendFormat("; {0}", sorted[i].ToString());
+
+      AddHeader("Cookie", header.ToString());
+    }
+
+    public void SetAuthorization(AuthenticationResponse response)
+    {
+      var credentials = response.ToString();
+      AddHeader("Authorization", credentials);
+    }
 
     public override string ToString()
     {
-      var buffer = new StringBuilder();
-      buffer.AppendFormat("{0} {1} HTTP/{2}{3}", HttpMethod, RawUrl, ProtocolVersion, _crlf);
+      var buffer = new StringBuilder(64);
+      buffer.AppendFormat("{0} {1} HTTP/{2}{3}", HttpMethod, RawUrl, ProtocolVersion, CrLf);
       foreach (string key in Headers.AllKeys)
-        buffer.AppendFormat("{0}: {1}{2}", key, Headers[key], _crlf);
+        buffer.AppendFormat("{0}: {1}{2}", key, Headers[key], CrLf);
 
-      buffer.Append(_crlf);
+      buffer.Append(CrLf);
       return buffer.ToString();
     }
 

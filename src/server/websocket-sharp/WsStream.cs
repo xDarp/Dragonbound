@@ -1,4 +1,4 @@
-#region MIT License
+#region License
 /*
  * WsStream.cs
  *
@@ -30,64 +30,62 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
-using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using WebSocketSharp.Net;
 using WebSocketSharp.Net.Security;
 
 namespace WebSocketSharp {
 
   internal class WsStream : IDisposable
   {
-    #region Fields
+    #region Private Const Fields
 
-    private Stream _innerStream;
-    private bool   _isSecure;
-    private Object _forRead;
-    private Object _forWrite;
+    private const int _handshakeLimitLen = 8192;
 
     #endregion
 
-    #region Private Constructor
+    #region Private Fields
 
-    private WsStream()
+    private Object _forRead;
+    private Object _forWrite;
+    private Stream _innerStream;
+    private bool   _secure;
+
+    #endregion
+
+    #region Private Constructors
+
+    private WsStream(Stream innerStream, bool secure)
     {
-      _forRead  = new object();
+      _innerStream = innerStream;
+      _secure = secure;
+      _forRead = new object();
       _forWrite = new object();
     }
 
     #endregion
 
-    #region Public Constructors
+    #region Internal Constructors
 
-    public WsStream(NetworkStream innerStream)
-      : this()
+    internal WsStream(NetworkStream innerStream)
+      : this(innerStream, false)
     {
-      if (innerStream.IsNull())
-        throw new ArgumentNullException("innerStream");
-
-      _innerStream = innerStream;
-      _isSecure    = false;
     }
 
-    public WsStream(SslStream innerStream)
-      : this()
+    internal WsStream(SslStream innerStream)
+      : this(innerStream, true)
     {
-      if (innerStream.IsNull())
-        throw new ArgumentNullException("innerStream");
-
-      _innerStream = innerStream;
-      _isSecure    = true;
     }
 
     #endregion
 
-    #region Properties
+    #region Public Properties
 
     public bool DataAvailable {
       get {
-        return _isSecure
+        return _secure
                ? ((SslStream)_innerStream).DataAvailable
                : ((NetworkStream)_innerStream).DataAvailable;
       }
@@ -95,7 +93,7 @@ namespace WebSocketSharp {
 
     public bool IsSecure {
       get {
-        return _isSecure;
+        return _secure;
       }
     }
 
@@ -103,66 +101,36 @@ namespace WebSocketSharp {
 
     #region Private Methods
 
-    private int read(byte[] buffer, int offset, int size)
+    private bool write(byte[] data)
     {
-      var readLen = _innerStream.Read(buffer, offset, size);
-      if (readLen < size)
+      lock (_forWrite)
       {
-        var msg = String.Format("Data can not be read from {0}.", _innerStream.GetType().Name);
-        throw new IOException(msg);
+        try {
+          _innerStream.Write(data, 0, data.Length);
+          return true;
+        }
+        catch {
+          return false;
+        }
       }
-
-      return readLen;
-    }
-
-    private int readByte()
-    {
-      return _innerStream.ReadByte();
-    }
-
-    private string[] readHandshake()
-    {
-      var buffer = new List<byte>();
-      while (true)
-      {
-        if (readByte().EqualsAndSaveTo('\r', buffer) &&
-            readByte().EqualsAndSaveTo('\n', buffer) &&
-            readByte().EqualsAndSaveTo('\r', buffer) &&
-            readByte().EqualsAndSaveTo('\n', buffer))
-          break;
-      }
-
-      return Encoding.UTF8.GetString(buffer.ToArray())
-             .Replace("\r\n", "\n").Replace("\n\n", "\n").TrimEnd('\n')
-             .Split('\n');
-    }
-
-    private void write(byte[] buffer, int offset, int count)
-    {
-      _innerStream.Write(buffer, offset, count);
-    }
-
-    private void writeByte(byte value)
-    {
-      _innerStream.WriteByte(value);
     }
 
     #endregion
 
     #region Internal Methods
 
-    internal static WsStream CreateClientStream(TcpClient client, string host, bool secure)
+    internal static WsStream CreateClientStream(TcpClient tcpClient, string host, bool secure)
     {
-      var netStream = client.GetStream();
+      var netStream = tcpClient.GetStream();
       if (secure)
       {
-        System.Net.Security.RemoteCertificateValidationCallback validationCb = (sender, certificate, chain, sslPolicyErrors) =>
+        System.Net.Security.RemoteCertificateValidationCallback callback = (sender, certificate, chain, sslPolicyErrors) =>
         {
           // FIXME: Always returns true
           return true;
         };
 
-        var sslStream = new SslStream(netStream, false, validationCb);
+        var sslStream = new SslStream(netStream, false, callback);
         sslStream.AuthenticateAsClient(host);
 
         return new WsStream(sslStream);
@@ -171,13 +139,13 @@ namespace WebSocketSharp {
       return new WsStream(netStream);
     }
 
-    internal static WsStream CreateServerStream(TcpClient client, bool secure)
+    internal static WsStream CreateServerStream(TcpClient tcpClient, bool secure)
     {
-      var netStream = client.GetStream();
+      var netStream = tcpClient.GetStream();
       if (secure)
       {
         var sslStream = new SslStream(netStream, false);
-        var certPath  = ConfigurationManager.AppSettings["ServerCertPath"];
+        var certPath = ConfigurationManager.AppSettings["ServerCertPath"];
         sslStream.AuthenticateAsServer(new X509Certificate2(certPath));
 
         return new WsStream(sslStream);
@@ -186,14 +154,10 @@ namespace WebSocketSharp {
       return new WsStream(netStream);
     }
 
-    internal static WsStream CreateServerStream(WebSocketSharp.Net.HttpListenerContext context)
+    internal static WsStream CreateServerStream(HttpListenerContext context)
     {
-      var conn   = context.Connection;
-      var stream = conn.Stream;
-
-      return conn.IsSecure
-             ? new WsStream((SslStream)stream)
-             : new WsStream((NetworkStream)stream);
+      var conn = context.Connection;
+      return new WsStream(conn.Stream, conn.IsSecure);
     }
 
     #endregion
@@ -232,53 +196,40 @@ namespace WebSocketSharp {
 
     public string[] ReadHandshake()
     {
-      lock (_forRead)
+      var read = false;
+      var buffer = new List<byte>();
+      Action<int> add = i => buffer.Add((byte)i);
+      while (buffer.Count < _handshakeLimitLen)
       {
-        try
+        if (_innerStream.ReadByte().EqualsWith('\r', add) &&
+            _innerStream.ReadByte().EqualsWith('\n', add) &&
+            _innerStream.ReadByte().EqualsWith('\r', add) &&
+            _innerStream.ReadByte().EqualsWith('\n', add))
         {
-          return readHandshake();
-        }
-        catch
-        {
-          return null;
+          read = true;
+          break;
         }
       }
+
+      if (!read)
+        throw new WebSocketException("The length of the handshake is greater than the limit length.");
+
+      return Encoding.UTF8.GetString(buffer.ToArray())
+             .Replace("\r\n", "\n")
+             .Replace("\n ", " ")
+             .Replace("\n\t", " ")
+             .TrimEnd('\n')
+             .Split('\n');
     }
 
     public bool WriteFrame(WsFrame frame)
     {
-      lock (_forWrite)
-      {
-        try
-        {
-          var buffer = frame.ToBytes();
-          write(buffer, 0, buffer.Length);
-
-          return true;
-        }
-        catch
-        {
-          return false;
-        }
-      }
+      return write(frame.ToByteArray());
     }
 
     public bool WriteHandshake(Handshake handshake)
     {
-      lock (_forWrite)
-      {
-        try
-        {
-          var buffer = handshake.ToBytes();
-          write(buffer, 0, buffer.Length);
-
-          return true;
-        }
-        catch
-        {
-          return false;
-        }
-      }
+      return write(handshake.ToByteArray());
     }
 
     #endregion

@@ -11,7 +11,7 @@ if ($t == "1")
     
     $config = array();
     $config['appId'] = '1397938667086072';
-    $config['secret'] = 'xd';
+    $config['secret'] = '7278db7362ed2c413ec490d7c909c47e';
     $config['fileUpload'] = false;
       
     $facebook = new Facebook($config);
@@ -28,12 +28,6 @@ if ($t == "1")
         error_log("[fbsdk] ".$e);
         $user = null;
       }
-    }
-    
-    if ($user) {
-      $logoutUrl = $facebook->getLogoutUrl();
-    } else {
-      $loginUrl = $facebook->getLoginUrl();
     }
     
     echo '[146634,0,0,"955fa89ea0e762fbe7c4","PE"]';

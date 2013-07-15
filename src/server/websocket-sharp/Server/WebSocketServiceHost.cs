@@ -1,4 +1,4 @@
-#region MIT License
+#region License
 /*
  * WebSocketServiceHost.cs
  *
@@ -48,17 +48,17 @@ namespace WebSocketSharp.Server {
   public class WebSocketServiceHost<T> : WebSocketServerBase, IServiceHost
     where T : WebSocketService, new()
   {
-    #region Field
+    #region Private Fields
 
-    private SessionManager _sessions;
+    private WebSocketServiceManager _sessions;
 
     #endregion
 
-    #region Internal Constructor
+    #region Internal Constructors
 
     internal WebSocketServiceHost()
     {
-      init();
+      _sessions = new WebSocketServiceManager();
     }
 
     #endregion
@@ -87,7 +87,7 @@ namespace WebSocketSharp.Server {
     public WebSocketServiceHost(string url)
       : base(url)
     {
-      init();
+      _sessions = new WebSocketServiceManager();
     }
 
     /// <summary>
@@ -143,7 +143,7 @@ namespace WebSocketSharp.Server {
     /// on the specified <paramref name="address"/>, <paramref name="port"/> and <paramref name="absPath"/>.
     /// </summary>
     /// <param name="address">
-    /// A <see cref="System.Net.IPAddress"/> that contains an IP address.
+    /// A <see cref="System.Net.IPAddress"/> that contains a local IP address.
     /// </param>
     /// <param name="port">
     /// An <see cref="int"/> that contains a port number. 
@@ -161,7 +161,7 @@ namespace WebSocketSharp.Server {
     /// on the specified <paramref name="address"/>, <paramref name="port"/>, <paramref name="absPath"/> and <paramref name="secure"/>.
     /// </summary>
     /// <param name="address">
-    /// A <see cref="System.Net.IPAddress"/> that contains an IP address.
+    /// A <see cref="System.Net.IPAddress"/> that contains a local IP address.
     /// </param>
     /// <param name="port">
     /// An <see cref="int"/> that contains a port number. 
@@ -175,26 +175,28 @@ namespace WebSocketSharp.Server {
     public WebSocketServiceHost(System.Net.IPAddress address, int port, string absPath, bool secure)
       : base(address, port, absPath, secure)
     {
-      init();
+      _sessions = new WebSocketServiceManager();
     }
 
     #endregion
 
-    #region Properties
+    #region Public Properties
 
     /// <summary>
-    /// Gets or sets a value indicating whether the server cleans up the inactive client.
+    /// Gets or sets a value indicating whether the server cleans up the inactive WebSocket service
+    /// instances periodically.
     /// </summary>
     /// <value>
-    /// <c>true</c> if the server cleans up the inactive client; otherwise, <c>false</c>.
+    /// <c>true</c> if the server cleans up the inactive WebSocket service instances every 60 seconds;
+    /// otherwise, <c>false</c>. The default value is <c>true</c>.
     /// </value>
-    public bool Sweeped {
+    public bool Sweeping {
       get {
-        return _sessions.Sweeped;
+        return _sessions.Sweeping;
       }
 
       set {
-        _sessions.Sweeped = value;
+        _sessions.Sweeping = value;
       }
     }
 
@@ -216,54 +218,28 @@ namespace WebSocketSharp.Server {
 
     #endregion
 
-    #region Private Method
-
-    private void init()
-    {
-      _sessions = new SessionManager();
-    }
-
-    #endregion
-
-    #region Explicit Interface Implementation
+    #region Protected Methods
 
     /// <summary>
-    /// Binds the specified <see cref="WebSocket"/> instance to the WebSocket service.
-    /// </summary>
-    /// <param name="socket">
-    /// A <see cref="WebSocket"/> to bind.
-    /// </param>
-    void IServiceHost.BindWebSocket(WebSocket socket)
-    {
-      T service = new T();
-      service.Bind(socket, _sessions);
-      service.Start();
-    }
-
-    #endregion
-
-    #region Protected Method
-
-    /// <summary>
-    /// Accepts a WebSocket connection.
+    /// Accepts a WebSocket connection request.
     /// </summary>
     /// <param name="context">
-    /// A <see cref="TcpListenerWebSocketContext"/> that contains a WebSocket connection.
+    /// A <see cref="TcpListenerWebSocketContext"/> that contains the WebSocket connection request objects.
     /// </param>
     protected override void AcceptWebSocket(TcpListenerWebSocketContext context)
     {
-      var socket = context.WebSocket;
-      var path   = context.Path.UrlDecode();
+      var ws = context.WebSocket;
+      var path = context.Path.UrlDecode();
       if (path != Uri.GetAbsolutePath().UrlDecode())
       {
-        socket.Close(HttpStatusCode.NotImplemented);
+        ws.Close(HttpStatusCode.NotImplemented);
         return;
       }
 
       if (Uri.IsAbsoluteUri)
-        socket.Url = Uri;
+        ws.Url = Uri;
 
-      ((IServiceHost)this).BindWebSocket(socket);
+      ((IServiceHost)this).BindWebSocket(context);
     }
 
     #endregion
@@ -285,8 +261,8 @@ namespace WebSocketSharp.Server {
     /// Pings with the specified <see cref="string"/> to all clients.
     /// </summary>
     /// <returns>
-    /// A Dictionary&lt;string, bool&gt; that contains the collection of the session ID and value
-    /// indicating whether the server received a Pong in a time.
+    /// A Dictionary&lt;string, bool&gt; that contains the collection of session IDs and values
+    /// indicating whether the server received the Pongs from each clients in a time.
     /// </returns>
     /// <param name="message">
     /// A <see cref="string"/> that contains a message.
@@ -303,6 +279,23 @@ namespace WebSocketSharp.Server {
     {
       base.Stop();
       _sessions.Stop();
+    }
+
+    #endregion
+
+    #region Explicit Interface Implementation
+
+    /// <summary>
+    /// Binds the specified <see cref="WebSocketContext"/> to a <see cref="WebSocketService"/> instance.
+    /// </summary>
+    /// <param name="context">
+    /// A <see cref="WebSocketContext"/> that contains the WebSocket connection request objects to bind.
+    /// </param>
+    void IServiceHost.BindWebSocket(WebSocketContext context)
+    {
+      T service = new T();
+      service.Bind(context, _sessions);
+      service.Start();
     }
 
     #endregion

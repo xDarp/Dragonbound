@@ -1,6 +1,6 @@
 #region License
 /*
- * Mask.cs
+ * WebSocketException.cs
  *
  * The MIT License
  *
@@ -30,9 +30,48 @@ using System;
 
 namespace WebSocketSharp {
 
-  internal enum Mask : byte
+  /// <summary>
+  /// Represents the exception that occurred when attempting to perform an operation on the WebSocket connection.
+  /// </summary>
+  public class WebSocketException : Exception
   {
-    UNMASK = 0x0,
-    MASK = 0x1
+    #region Internal Constructors
+
+    internal WebSocketException()
+      : this(CloseStatusCode.ABNORMAL)
+    {
+    }
+
+    internal WebSocketException(CloseStatusCode code)
+      : this(code, code.GetMessage())
+    {
+    }
+
+    internal WebSocketException(string message)
+      : this(CloseStatusCode.NO_STATUS_CODE, message)
+    {
+    }
+
+    internal WebSocketException(CloseStatusCode code, string message)
+      : base(message)
+    {
+      Code = code;
+    }
+
+    #endregion
+
+    #region Public Properties
+
+    /// <summary>
+    /// Gets the <see cref="CloseStatusCode"/> associated with a <see cref="WebSocketException"/>.
+    /// </summary>
+    /// <value>
+    /// One of the <see cref="CloseStatusCode"/> values that indicates the cause of the exception.
+    /// </value>
+    public CloseStatusCode Code {
+      get; private set;
+    }
+
+    #endregion
   }
 }

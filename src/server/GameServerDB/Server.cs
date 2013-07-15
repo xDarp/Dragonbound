@@ -35,7 +35,7 @@ namespace GameServerDB
         }
         protected override void OnOpen()
         {
-            string _hi_p = "[9,22,\"Server 2 - Pro\"]";
+            string _hi_p = "[9,29,\"Server 2 - Pro\",0]";
             Send(_hi_p);
             Console.WriteLine("id: {0}", this.ID);
             User.sep = this;

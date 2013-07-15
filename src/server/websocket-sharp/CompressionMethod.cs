@@ -1,10 +1,10 @@
 #region License
 /*
- * Mask.cs
+ * CompressionMethod.cs
  *
  * The MIT License
  *
- * Copyright (c) 2012-2013 sta.blockhead
+ * Copyright (c) 2013 sta.blockhead
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,9 +30,22 @@ using System;
 
 namespace WebSocketSharp {
 
-  internal enum Mask : byte
+  /// <summary>
+  /// Contains the values of the compression methods used to compress the payload data of the WebSocket Data frame.
+  /// </summary>
+  /// <remarks>
+  /// The <b>CompressionMethod</b> enumeration contains the values of the compression methods defined in
+  /// <see href="http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression-09">Compression Extensions for WebSocket</see>.
+  /// </remarks>
+  public enum CompressionMethod : byte
   {
-    UNMASK = 0x0,
-    MASK = 0x1
+    /// <summary>
+    /// Indicates non compression.
+    /// </summary>
+    NONE,
+    /// <summary>
+    /// Indicates using DEFLATE.
+    /// </summary>
+    DEFLATE
   }
 }

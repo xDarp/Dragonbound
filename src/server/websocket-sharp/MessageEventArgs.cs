@@ -1,4 +1,4 @@
-#region MIT License
+#region License
 /*
  * MessageEventArgs.cs
  *
@@ -41,38 +41,51 @@ namespace WebSocketSharp {
   /// </remarks>
   public class MessageEventArgs : EventArgs
   {
-    #region Fields
+    #region Private Fields
 
-    private PayloadData _data;
-    private Opcode      _type;
+    private string _data;
+    private Opcode _opcode;
+    private byte[] _rawData;
 
     #endregion
 
-    #region Constructor
+    #region Internal Constructors
 
-    internal MessageEventArgs(Opcode type, PayloadData data)
+    internal MessageEventArgs(Opcode opcode, byte[] rawData)
     {
-      _type = type;
-      _data = data;
+      if ((ulong)rawData.LongLength > PayloadData.MaxLength)
+        throw new WebSocketException(CloseStatusCode.TOO_BIG);
+
+      _opcode = opcode;
+      _rawData = rawData;
+    }
+
+    internal MessageEventArgs(Opcode opcode, PayloadData data)
+    {
+      _opcode = opcode;
+      _rawData = data.ApplicationData;
     }
 
     #endregion
 
-    #region Properties
+    #region Public Properties
 
     /// <summary>
     /// Gets the received data as a <see cref="string"/>.
     /// </summary>
     /// <value>
-    /// A <see cref="string"/> that contains a received data.
+    /// A <see cref="string"/> that contains the received data.
     /// </value>
     public string Data {
       get {
-        return ((Opcode.TEXT | Opcode.PING | Opcode.PONG) & _type) == _type
-               ? _data.Length > 0
-                 ? Encoding.UTF8.GetString(_data.ToBytes())
-                 : String.Empty
-               : _type.ToString();
+        if (_data == null)
+          _data = _rawData.LongLength == 0
+                ? String.Empty
+                : _opcode == Opcode.TEXT
+                  ? Encoding.UTF8.GetString(_rawData)
+                  : _opcode.ToString();
+
+        return _data;
       }
     }
 
@@ -80,23 +93,23 @@ namespace WebSocketSharp {
     /// Gets the received data as an array of <see cref="byte"/>.
     /// </summary>
     /// <value>
-    /// An array of <see cref="byte"/> that contains a received data.
+    /// An array of <see cref="byte"/> that contains the received data.
     /// </value>
     public byte[] RawData {
       get {
-        return _data.ToBytes();
+        return _rawData;
       }
     }
 
     /// <summary>
-    /// Gets the type of received data.
+    /// Gets the type of the received data.
     /// </summary>
     /// <value>
-    /// One of the <see cref="WebSocketSharp.Frame.Opcode"/> that indicates the type of received data.
+    /// One of the <see cref="Opcode"/> values that indicates the type of the received data.
     /// </value>
     public Opcode Type {
       get {
-        return _type;
+        return _opcode;
       }
     }
 

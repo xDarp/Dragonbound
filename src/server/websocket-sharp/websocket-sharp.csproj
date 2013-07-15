@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>WebSocketSharp</RootNamespace>
     <AssemblyName>websocket-sharp</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>websocket-sharp.snk</AssemblyOriginatorKeyFile>
     <FileUpgradeFlags>
@@ -17,7 +17,6 @@
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <OldToolsVersion>3.5</OldToolsVersion>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -28,7 +27,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
@@ -37,7 +35,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug_Ubuntu|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -48,7 +45,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release_Ubuntu|AnyCPU' ">
     <DebugType>none</DebugType>
@@ -63,7 +59,6 @@
         <Command type="AfterBuild" command="doc/doc.sh" workingdir="doc/" externalConsole="true" />
       </CustomCommands>
     </CustomCommands>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -77,7 +72,6 @@
     <Compile Include="WsState.cs" />
     <Compile Include="MessageEventArgs.cs" />
     <Compile Include="CloseEventArgs.cs" />
-    <Compile Include="WsReceivedTooBigMessageException.cs" />
     <Compile Include="ByteOrder.cs" />
     <Compile Include="ErrorEventArgs.cs" />
     <Compile Include="WebSocket.cs" />
@@ -111,15 +105,12 @@
     <Compile Include="Net\ResponseStream.cs" />
     <Compile Include="Net\WebHeaderCollection.cs" />
     <Compile Include="Server\HttpServer.cs" />
-    <Compile Include="Server\ResponseEventArgs.cs" />
     <Compile Include="Net\HttpVersion.cs" />
     <Compile Include="Net\HttpStatusCode.cs" />
     <Compile Include="Server\WebSocketServerBase.cs" />
     <Compile Include="Net\Security\SslStream.cs" />
     <Compile Include="Server\IServiceHost.cs" />
-    <Compile Include="Server\SessionManager.cs" />
     <Compile Include="Server\WebSocketServiceHost.cs" />
-    <Compile Include="Server\ServiceManager.cs" />
     <Compile Include="CloseStatusCode.cs" />
     <Compile Include="Fin.cs" />
     <Compile Include="Mask.cs" />
@@ -130,7 +121,22 @@
     <Compile Include="Net\WebSockets\HttpListenerWebSocketContext.cs" />
     <Compile Include="Net\WebSockets\TcpListenerWebSocketContext.cs" />
     <Compile Include="Net\WebSockets\WebSocketContext.cs" />
+    <Compile Include="Server\ServiceHostManager.cs" />
+    <Compile Include="Server\WebSocketServiceManager.cs" />
+    <Compile Include="Server\HttpRequestEventArgs.cs" />
+    <Compile Include="Net\HttpHeaderType.cs" />
+    <Compile Include="Net\HttpHeaderInfo.cs" />
+    <Compile Include="CompressionMethod.cs" />
+    <Compile Include="WebSocketException.cs" />
+    <Compile Include="AuthenticationChallenge.cs" />
+    <Compile Include="AuthenticationResponse.cs" />
+    <Compile Include="WsCredential.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Server\" />
+    <Folder Include="Net\" />
+    <Folder Include="Net\Security\" />
+    <Folder Include="Net\WebSockets\" />
+  </ItemGroup>
 </Project>

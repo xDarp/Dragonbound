@@ -1,4 +1,4 @@
-#region MIT License
+#region License
 /*
  * WebSocketContext.cs
  *
@@ -41,7 +41,7 @@ namespace WebSocketSharp.Net.WebSockets {
   /// </remarks>
   public abstract class WebSocketContext {
 
-    #region Constructor
+    #region Protected Constructors
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WebSocketSharp.Net.WebSockets.WebSocketContext"/> class.
@@ -52,7 +52,7 @@ namespace WebSocketSharp.Net.WebSockets {
 
     #endregion
 
-    #region Properties
+    #region Public Properties
 
     /// <summary>
     /// Gets the cookies used in the WebSocket opening handshake.
@@ -95,12 +95,36 @@ namespace WebSocketSharp.Net.WebSockets {
     public abstract bool IsSecureConnection { get; }
 
     /// <summary>
+    /// Gets a value indicating whether the WebSocket connection request is valid.
+    /// </summary>
+    /// <value>
+    /// <c>true</c> if the WebSocket connection request is valid; otherwise, <c>false</c>.
+    /// </value>
+    public abstract bool IsValid { get; }
+
+    /// <summary>
     /// Gets the value of the Origin header field used in the WebSocket opening handshake.
     /// </summary>
     /// <value>
     /// A <see cref="string"/> that contains the value of the Origin header field.
     /// </value>
     public abstract string Origin { get; }
+
+    /// <summary>
+    /// Gets the absolute path of the requested WebSocket URI.
+    /// </summary>
+    /// <value>
+    /// A <see cref="string"/> that contains the absolute path of the requested WebSocket URI.
+    /// </value>
+    public abstract string Path { get; }
+
+    /// <summary>
+    /// Gets the collection of query string variables used in the WebSocket opening handshake.
+    /// </summary>
+    /// <value>
+    /// A <see cref="NameValueCollection"/> that contains the collection of query string variables.
+    /// </value>
+    public abstract NameValueCollection QueryString { get; }
 
     /// <summary>
     /// Gets the WebSocket URI requested by the client.
@@ -147,7 +171,7 @@ namespace WebSocketSharp.Net.WebSockets {
     /// Gets the client information (identity, authentication information and security roles).
     /// </summary>
     /// <value>
-    /// An <see cref="IPrincipal"/> that contains the client information.
+    /// A <see cref="IPrincipal"/> that contains the client information.
     /// </value>
     public abstract IPrincipal User { get; }
 

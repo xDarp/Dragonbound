@@ -1,10 +1,10 @@
-#region MIT License
+#region License
 /*
  * ResponseHandshake.cs
  *
  * The MIT License
  *
- * Copyright (c) 2012 sta.blockhead
+ * Copyright (c) 2012-2013 sta.blockhead
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,7 @@ namespace WebSocketSharp {
 
   internal class ResponseHandshake : Handshake
   {
-    #region Constructor
+    #region Public Constructors
 
     public ResponseHandshake()
       : this(HttpStatusCode.SwitchingProtocols)
@@ -47,42 +47,59 @@ namespace WebSocketSharp {
     public ResponseHandshake(HttpStatusCode code)
     {
       StatusCode = ((int)code).ToString();
-      Reason     = code.GetDescription();
+      Reason = code.GetDescription();
+      AddHeader("Server", "websocket-sharp/1.0");
     }
 
     #endregion
 
-    #region Properties
+    #region Public Properties
 
-    public bool IsWebSocketResponse {
-
+    public AuthenticationChallenge AuthChallenge {
       get {
-        if (ProtocolVersion != HttpVersion.Version11)
-          return false;
-
-        if (StatusCode != "101")
-          return false;
-
-        if (!HeaderExists("Upgrade", "websocket"))
-          return false;
-
-        if (!HeaderExists("Connection", "Upgrade"))
-          return false;
-
-        if (!HeaderExists("Sec-WebSocket-Accept"))
-          return false;
-
-        return true;
+        return ContainsHeader("WWW-Authenticate")
+               ? AuthenticationChallenge.Parse(Headers["WWW-Authenticate"])
+               : null;
       }
     }
 
-    public string Reason { get; internal set; }
+    public CookieCollection Cookies {
+      get {
+        return Headers.GetCookies(true);
+      }
+    }
 
-    public string StatusCode { get; internal set; }
+    public bool IsUnauthorized {
+      get {
+        return StatusCode == "401";
+      }
+    }
+
+    public bool IsWebSocketResponse {
+      get {
+        return ProtocolVersion < HttpVersion.Version11
+               ? false
+               : StatusCode != "101"
+                 ? false
+                 : !ContainsHeader("Upgrade", "websocket")
+                   ? false
+                   : !ContainsHeader("Connection", "Upgrade")
+                     ? false
+                     : ContainsHeader("Sec-WebSocket-Accept");
+      }
+    }
+
+    public string Reason {
+      get; private set;
+    }
+
+    public string StatusCode {
+      get; private set;
+    }
 
     #endregion
 
-    #region Methods
+    #region Public Methods
 
     public static ResponseHandshake CreateCloseResponse(HttpStatusCode code)
     {
@@ -98,33 +115,39 @@ namespace WebSocketSharp {
       if (statusLine.Length < 3)
         throw new ArgumentException("Invalid status line.");
 
-      var reason = new StringBuilder(statusLine[2]);
+      var reason = new StringBuilder(statusLine[2], 64);
       for (int i = 3; i < statusLine.Length; i++)
         reason.AppendFormat(" {0}", statusLine[i]);
 
       var headers = new WebHeaderCollection();
       for (int i = 1; i < response.Length; i++)
-        headers.Add(response[i]);
+        headers.SetInternal(response[i], true);
 
       return new ResponseHandshake {
-        Headers         = headers,
-        Reason          = reason.ToString(),
-        StatusCode      = statusLine[1],
+        Headers = headers,
+        Reason = reason.ToString(),
+        StatusCode = statusLine[1],
         ProtocolVersion = new Version(statusLine[0].Substring(5))
       };
     }
 
+    public void SetCookies(CookieCollection cookies)
+    {
+      if (cookies == null || cookies.Count == 0)
+        return;
+
+      foreach (var cookie in cookies.Sorted)
+        AddHeader("Set-Cookie", cookie.ToResponseString());
+    }
+
     public override string ToString()
     {
-      var buffer = new StringBuilder();
-
-      buffer.AppendFormat("HTTP/{0} {1} {2}{3}", ProtocolVersion, StatusCode, Reason, _crlf);
-
+      var buffer = new StringBuilder(64);
+      buffer.AppendFormat("HTTP/{0} {1} {2}{3}", ProtocolVersion, StatusCode, Reason, CrLf);
       foreach (string key in Headers.AllKeys)
-        buffer.AppendFormat("{0}: {1}{2}", key, Headers[key], _crlf);
+        buffer.AppendFormat("{0}: {1}{2}", key, Headers[key], CrLf);
 
-      buffer.Append(_crlf);
-
+      buffer.Append(CrLf);
       return buffer.ToString();
     }
 
