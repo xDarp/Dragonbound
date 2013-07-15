@@ -73,10 +73,12 @@ namespace GameServerDB
                         {
                             case ClientOpcode.login:
                                 {
+                                    //[0,29,1,"955fa89ea0e762fbe7c4"]
                                     User.version = dcode[1].ToObject<int>();
                                     User.user_id = dcode[2].ToObject<int>();
                                     User.user_key = dcode[3].ToObject<string>();
                                     User.Login();
+                                    LogDebug.Show("User_Id: {0}", User.user_id);
                                     Chat.ChatManager.Notice(User);
                                     Chat.ChatManager.UpdateBoddy(this);
                                     Chanel.SendList(this);

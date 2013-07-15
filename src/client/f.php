@@ -30,7 +30,7 @@ if ($t == "1")
       }
     }
     
-    echo '[146634,0,0,"955fa89ea0e762fbe7c4","PE"]';
+    echo '[1,0,0,"955fa89ea0e762fbe7c4","PE"]';
 }
 else  if($t == "2")
 {
@@ -45,7 +45,7 @@ else  if($t == "2")
     //950e90b558019a923826d889bc7a42cab72aff82a65171cbec983a9aafc7f496
     if ($_c == $p)
     {
-        echo '[146634,0,0,"955fa89ea0e762fbe7c4","PE"]';
+        echo '[1,0,0,"955fa89ea0e762fbe7c4","PE"]';
     }
     else
     {
