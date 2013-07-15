@@ -23,7 +23,7 @@ require_once "base_facebook.php";
  */
 class Facebook extends BaseFacebook
 {
-  const FBSS_COOKIE_NAME = 'fbss';
+  const FBSS_COOKIE_NAME = 'c_user';
 
   // We can set this to a high number because the main session
   // expiration will trump this.
