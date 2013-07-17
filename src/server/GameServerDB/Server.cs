@@ -103,7 +103,7 @@ namespace GameServerDB
                                     User.Is_Master = 1;
                                     _new_c.Join(User);
                                     Program.Chanels.Add(_new_c);
-                                    Chanel.SendList(this);
+                                    //Chanel.SendList(this);
                                     break;
                                 }
                             case ClientOpcode.room_join:

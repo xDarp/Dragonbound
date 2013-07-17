@@ -104,7 +104,7 @@ namespace GameServerDB.ChanelManager
                 writer.WriteStartArray();
                 writer.WriteValue((int)ServerOpcode.room_players);
                 writer.WriteStartArray();
-                writer.WriteValue(1);  //unk1 - user_on?
+                writer.WriteValue(UserInSala.Count);  //unk1 - user_on?
                 writer.WriteValue(7);  //unk2
                 writer.WriteStartArray();
                 writer.WriteEndArray();
