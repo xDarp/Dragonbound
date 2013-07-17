@@ -10,7 +10,7 @@ Target Server Type    : MYSQL
 Target Server Version : 50508
 File Encoding         : 65001
 
-Date: 2013-07-14 23:26:46
+Date: 2013-07-17 01:17:02
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -591,7 +591,8 @@ CREATE TABLE `users` (
 -- ----------------------------
 -- Records of users
 -- ----------------------------
-INSERT INTO `users` VALUES ('1', 'CarlosX', '688bafc7eb1846d822f8', '24', '22', '999233397', '999899925', '0', 'm', '9999', '0', '100000014337670', '1', '0');
+INSERT INTO `users` VALUES ('1', 'CarlosX', '688bafc7eb1846d822f8', '24', '29', '99923', '99989', '0', 'm', '9999', '0', '100000014337670', '1', '0');
+
 -- ----------------------------
 -- Table structure for `user_items`
 -- ----------------------------
@@ -610,19 +611,3 @@ CREATE TABLE `user_items` (
 -- ----------------------------
 -- Records of user_items
 -- ----------------------------
-INSERT INTO `user_items` VALUES ('11', '195', '0', 'c', '0', '0000-00-00 00:00:00', '1');
-INSERT INTO `user_items` VALUES ('12', '303', '0', 'c', '1', '0000-00-00 00:00:00', '1');
-INSERT INTO `user_items` VALUES ('19', '57', '0', 'g', '0', '0000-00-00 00:00:00', '1');;
-INSERT INTO `user_items` VALUES ('23', '450', '1', 'c', '0', '0000-00-00 00:00:00', '1');
-INSERT INTO `user_items` VALUES ('24', '492', '1', 'c', '0', '0000-00-00 00:00:00', '1');
-INSERT INTO `user_items` VALUES ('26', '442', '0', 'c', '0', '0000-00-00 00:00:00', '1');
-INSERT INTO `user_items` VALUES ('27', '411', '0', 'c', '0', '0000-00-00 00:00:00', '1');
-INSERT INTO `user_items` VALUES ('31', '175', '0', 'c', '0', '0000-00-00 00:00:00', '1');
-INSERT INTO `user_items` VALUES ('32', '326', '1', 'c', '0', '0000-00-00 00:00:00', '1');
-INSERT INTO `user_items` VALUES ('33', '193', '1', 'c', '0', '0000-00-00 00:00:00', '1');
-INSERT INTO `user_items` VALUES ('34', '66', '0', 'g', '0', '0000-00-00 00:00:00', '1');
-INSERT INTO `user_items` VALUES ('35', '58', '1', 'g', '0', '0000-00-00 00:00:00', '1');
-INSERT INTO `user_items` VALUES ('36', '137', '1', 'c', '0', '0000-00-00 00:00:00', '1');
-INSERT INTO `user_items` VALUES ('37', '396', '0', 'c', '0', '0000-00-00 00:00:00', '1');
-INSERT INTO `user_items` VALUES ('38', '430', '0', 'c', '0', '0000-00-00 00:00:00', '1');
-INSERT INTO `user_items` VALUES ('39', '189', '0', 'g', '0', '0000-00-00 00:00:00', '1');

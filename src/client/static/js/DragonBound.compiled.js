@@ -4132,7 +4132,7 @@ function CloseDialogs() {
 }
 function GetServerType() {
 	var a = location.hostname;
-	return "t.dragonbound.net" == a ? "dev" : "dragonbound-brasil.com" == a || "br.dragonbound.net" == a || "dragonbound.com.br" == a || "dragonbound.net.br" == a ? "br" : "gl"
+	return "carlosx.byethost15.com" == a ? "dev" : "dragonbound-brasil.com" == a || "br.dragonbound.net" == a || "dragonbound.com.br" == a || "dragonbound.net.br" == a ? "br" : "gl"
 };
 var LANGUAGE = {
 	EN: -1,
@@ -7396,7 +7396,7 @@ DragonNetwork.prototype.BrokerConnect = function() {
 	this.ds && this.ds.Disconnect();
 	var a = this,
 		b, d;
-	"gl" == SERVER_TYPE ? (b = "carlosx.byethost15.com", d = 80) : "br" == SERVER_TYPE ? (b = "carlosx.byethost15.com", d = 9100) : (b = "carlosx.byethost15.com", d = 9E3);
+	"gl" == SERVER_TYPE ? (b = "carlosx.byethost15.com", d = 80) : "br" == SERVER_TYPE ? (b = "carlosx.byethost15.com", d = 9100) : (b = "carlosx.byethost15.com", d = 80);
 	$("#BrokerScreen").is(":visible") || AudioPlay(AUDIO_BROKER);
 	$("#BrokerTitle").html(l.t("Loading Channels") + "... " + l.t("Please Wait") + "...");
 	$(".BrokerChannel").removeClass("BrokerChannelOnline BrokerChannelFull opacity_button");
@@ -8988,7 +8988,7 @@ function HowToPlay() {
 function LoadRanking(a, b, d) {
 	if (!(1 != a && 2 != a) && ($(".ranking_btn").removeClass("selected"), $("#ranking_btn_type" + a).addClass("selected"), !g_is_ranking_loading)) if (isNaN(b) || (b = b - b % RANKING_PAGE_SIZE + 1), rankings_cache[a][b] && get_time() < rankings_cache[a][b].x) debug && console.log("[DragonRankings] From Cache:", b), DragonRankings_BuildPage(rankings_cache[a][b].d, a, d, b);
 	else {
-		var c = "http://" + ("dev" == SERVER_TYPE ? "t" : "rankings") + ".dragonbound.net:" + (1 == a ? "br" == SERVER_TYPE ? 9921 : 9911 : "br" == SERVER_TYPE ? 9922 : 9912) + "/r";
+		var c = "http://" + ("dev" == SERVER_TYPE ? "www" : "rankings") + ".carlosx.byethost15.com:" + (1 == a ? "br" == SERVER_TYPE ? 9921 : 9911 : "br" == SERVER_TYPE ? 9922 : 9912) + "/r.php";
 		debug && console.log("[DragonRankings] Asking For:", b);
 		debug && t0();
 		g_is_ranking_loading = !0;
@@ -10374,6 +10374,7 @@ DragonSocket.prototype.Connect = function(a, b) {
 	this.ws.onmessage = function(a) {
 		try {
 			var b = JSON.parse(a.data)
+			debug && console.log("[DragonSocket] OnMessage:", b)
 		} catch (f) {
 			d.error_handler && d.error_handler("Received not JSON: " + a.data);
 			return

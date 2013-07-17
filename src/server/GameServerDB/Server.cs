@@ -69,6 +69,7 @@ namespace GameServerDB
                     {
                         JArray dcode = JArray.Parse(e.Data);
                         ClientOpcode opc = (ClientOpcode)int.Parse(dcode[0].ToString());
+                        LogDebug.Show("opcode: {0}", opc);
                         switch (opc)
                         {
                             case ClientOpcode.login:

@@ -44,6 +44,56 @@
               <link rel="stylesheet" href="/static/css/DragonBound.min.css?<? echo $ver;?>"/>
               <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/themes/base/jquery-ui.css"/>
               <style id="DragonTheme">
+                body {
+                background-image:url(/static/images/themes/gl/bg_full.jpg);
+                }
+
+                #channelScreen {
+                background-image:url(.);
+                }
+
+                #roomScreen {
+                background-image:url(.);
+                }
+
+                #shopScreen {
+                background-image:url(.);
+                }
+
+                .rank {
+                background-image:url(/static/images/lobby_stuff4.png);
+                background-repeat:no-repeat;
+                }
+
+                .roomMap,#room_map,#RoomOptionsMapImage {
+                background-image:url(/static/images/themes/gl/maps.png);
+                background-repeat:no-repeat;
+                }
+
+                .zotata-chat-icon,.room,.roomExtraInfo,.status,.roomLocked,#dialogCreateRoom,#BrokerLogout,.LobbyButton,.iconModeNormal,.iconModeBoss,.iconModeSame,.gameModeNormal,.gameModeBoss,.gameModeSame,#OptionsDialog,#BrokerRefresh,.players1v1,.players2v2,.players3v3,.players4v4,.players1vB,.players2vB,.players3vB,.players4vB,#CreateRoomPassword,.buttonOK,.buttonCancel,.buttonPrev,.buttonNext,.checkboxOff,.checkboxOn,.CheckboxOff,.CheckboxOn,.AlertBox,#ConnectWithFacebook,#ConnectWithPassword,#buttonRanking,#dialogCreateLocked,#RoomOptionsModeLocked,#OptionsOK,#OptionsLeave,.RadioOn,.RadioOff,#infoAddBuddy,#infoGuildInvite,.chatDialogDelete,.chatDialogGuildKick,.roomBuddy,.roomGuildMember,#guild_create,#guild_leave,.BrokerChannel,.paypal_corner,.buttonClose,#new_img,.BrokerChannelFullIcon,.imgLock {
+                background-image:url(/static/images/lobby_stuff4.png);
+                background-repeat:no-repeat;
+                }
+
+                #roomButtonBack,#roomButtonChangeTeam,.buttonMobile,.roomPlayerInfo,.roomPlayerNotReady,.roomPlayerReady,.roomPlayerMaster,.roomPlayerShadow,.roomBotSelect,.roomBotRemove,.roomPlayerBalloonTip,#room_timer,.GamePlayerBalloonTip,#room_change_title_button,#room_options_button,#add_bot_button,#playerInfoDialog,#infoRankingTab,#infoChat,#infoClose,.ChatDialog,.chatDialogClose,#room_item_buddy_tab,#dialog_room_options {
+                background-image:url(/static/images/room_stuff2.png);
+                background-repeat:no-repeat;
+                }
+
+                .weather-0,.weather-1,#message_over_items.items_locked,#message_over_items.sudden_death,#gameui,#powerBar,#powerMark,.Turn,.DamageDigit,.LastAngleDigit,.UIGoldDigit,#btnShot1,#btnShot2,#btnShotSS,#btnPass,#btnEsc,#last_power_mark,#all_chat,#team_chat,.turn_line_number,#slice_drag_button,.imgS1 {
+                background-image:url(/static/images/game_stuff3.png?3);
+                background-repeat:no-repeat;
+                }
+
+                #game_over,#scores_lose_a,#scores_lose_b,.score,.score_me {
+                background-image:url(/static/images/scores_stuff.png);
+                background-repeat:no-repeat;
+                }
+
+                .shopButton,.shop_item,.shop_item_icon,.stat_icon,.stat_font,.shop_my_item,.shop_my_item_cash,.shop_my_item_gift,.shop_my_item_icon,.shop_my_item_equip.equipped,#shop_buy_dialog {
+                background-image:url(/static/images/shop_stuff3.png);
+                background-repeat:no-repeat;
+                }
               </style>
               <script type="text/javascript">
                 /* <![CDATA[ */

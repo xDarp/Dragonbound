@@ -32,11 +32,11 @@ namespace GameServerDB.UserManager
         public int flag = 0;
 
         public int background = 0;
-        public int foreground = -1;
+        public int foreground = 0;
 
         public int room_number = 0;
         public int location_type = 1;
-        public int unlock = 1;
+        public int unlock = 6;
 
         public int event1 = -1;
         public int event2 = -1;
@@ -129,6 +129,8 @@ namespace GameServerDB.UserManager
         }
         public void PlayerInfo()
         {
+            //[1,[146634,1,0,"Carlos 22",0,804,83624,1290,"m",
+            //6,1,2,0,0,0,0,-1,-1,100000014337670,0,0,1,0]]
             StringBuilder sb = new StringBuilder();
             StringWriter sw = new StringWriter(sb);
             using (JsonWriter writer = new JsonTextWriter(sw))
@@ -145,21 +147,21 @@ namespace GameServerDB.UserManager
                 writer.WriteValue(gp);
                 writer.WriteValue(gold);
                 writer.WriteValue(cash);
-                writer.WriteValue(gender);
-                writer.WriteValue(unlock);
-                writer.WriteValue(head);
-                writer.WriteValue(body);
-                writer.WriteValue(eyes);
-                writer.WriteValue(flag);
-                writer.WriteValue(foreground);
-                writer.WriteValue(background);
-                writer.WriteValue(event1);
-                writer.WriteValue(event2);
+                writer.WriteValue(gender);//
+                writer.WriteValue(unlock);//6
+                writer.WriteValue(head);//1
+                writer.WriteValue(body);//2
+                writer.WriteValue(eyes);//0
+                writer.WriteValue(flag);//0
+                writer.WriteValue(foreground);//0
+                writer.WriteValue(background);//0
+                writer.WriteValue(event1);//-1
+                writer.WriteValue(event2);//-1
                 writer.WriteValue(foto);
-                writer.WriteValue(guild);
-                writer.WriteValue(guild_job);
-                writer.WriteValue(name_changes);
-                writer.WriteValue(power_user);
+                writer.WriteValue(guild);//0
+                writer.WriteValue(guild_job);//0
+                writer.WriteValue(name_changes);//1
+                writer.WriteValue(power_user);//0
                 writer.WriteEndArray();
                 writer.WriteEndArray();
             }
@@ -167,7 +169,7 @@ namespace GameServerDB.UserManager
         }
         public void GetAvatars()
         {
-            SQLResult result = Program._SQL.Select("SELECT no,avatar,puesto FROM user_items WHERE id_user=?", user_id);
+            SQLResult result = Program._SQL.Select("SELECT no, avatar, puesto FROM user_items WHERE id_user=?", user_id);
             if (result.Count != 0)
             {
                 StringBuilder sb = new StringBuilder();
@@ -191,6 +193,26 @@ namespace GameServerDB.UserManager
                         writer.WriteValue(0);
                         writer.WriteEndArray();
                     }
+                    writer.WriteEndArray();
+                    writer.WriteValue(gold);
+                    writer.WriteValue(cash);
+                    writer.WriteEndArray();
+                    writer.WriteEndArray();
+                    sep.Send(sb.ToString());
+                }
+            }
+            else
+            {
+                //[16,[[],83624,1290]]
+                StringBuilder sb = new StringBuilder();
+                StringWriter sw = new StringWriter(sb);
+                using (JsonWriter writer = new JsonTextWriter(sw))
+                {
+                    writer.Formatting = Formatting.None;
+                    writer.WriteStartArray();
+                    writer.WriteValue((int)ServerOpcode.my_avatars);
+                    writer.WriteStartArray();
+                    writer.WriteStartArray();
                     writer.WriteEndArray();
                     writer.WriteValue(gold);
                     writer.WriteValue(cash);
