@@ -91,6 +91,9 @@ namespace GameServerDB
                                 }
                             case ClientOpcode.room_create:
                                 {
+                                    //test script
+                                    // op, name    , pass   ,p,g
+                                    //[10,"Welcome","123456",4,1]
                                     Chanel _new_c = new Chanel();
                                     _new_c.chanel_id = new Random().Next(2, 9);
                                     _new_c.chanel_name = dcode[1].ToObject<string>();

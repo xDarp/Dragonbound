@@ -27,6 +27,10 @@ namespace GameServerDB.ChanelManager
         private bool        _chanel_avatar_on   = false;
         private int         _chanel_max_wind    = 0;
         private int         _chanel_gp_rate     = 0;
+        private int         _unk1               = 0;
+        private string      _unk2;
+        private string      _unk3;
+        private string      _unk4;
         #endregion
 
         #region Public
@@ -51,6 +55,7 @@ namespace GameServerDB.ChanelManager
         {
             _user.sep.Send("[" + (int)ServerOpcode.enter_room + "]");
 
+            //[3,[682,"Welcome","123456",4,1,-1,true,0,0,0,null,null,null]]
             StringBuilder sb = new StringBuilder();
             StringWriter sw = new StringWriter(sb);
             using (JsonWriter writer = new JsonTextWriter(sw))
@@ -68,6 +73,10 @@ namespace GameServerDB.ChanelManager
                 writer.WriteValue(_chanel_avatar_on);
                 writer.WriteValue(_chanel_max_wind);
                 writer.WriteValue(_chanel_gp_rate);
+                writer.WriteValue(_unk1);
+                writer.WriteValue(_unk2);
+                writer.WriteValue(_unk3);
+                writer.WriteValue(_unk4);
                 writer.WriteEndArray();
                 writer.WriteEndArray();
             }
@@ -76,6 +85,7 @@ namespace GameServerDB.ChanelManager
         }
         public void RoomPlayer(UserManager.UserClass user_send)
         {
+            //[2,[2,7,[],0,146634,"Carlos 22",0,0,1,1,"m",0,[1,2,0,0,0,0],0,0,1,181494328,"Bill Board",13,0,0,1,"m",5,[12,30],1,0]]
             for (int x = 0; x < 8; x++)
             {
                 if (user_slot[x] == false)
@@ -94,17 +104,19 @@ namespace GameServerDB.ChanelManager
                 writer.WriteStartArray();
                 writer.WriteValue((int)ServerOpcode.room_players);
                 writer.WriteStartArray();
+                writer.WriteValue(1);  //unk1 - user_on?
+                writer.WriteValue(7);  //unk2
+                writer.WriteStartArray();
+                writer.WriteEndArray();
                 foreach (UserManager.UserClass _user in UserInSala)
                 {
-                    writer.WriteValue(5);
-                    writer.WriteValue(0);
                     writer.WriteValue(_user.Position);
                     writer.WriteValue(_user.user_id);
                     writer.WriteValue(_user.Name);
                     writer.WriteValue(_user.rank);
-                    writer.WriteValue(0);
-                    writer.WriteValue(1);
-                    writer.WriteValue(1);
+                    writer.WriteValue(0);  // unk - guild ?
+                    writer.WriteValue(1);  // unk - is_master ?
+                    writer.WriteValue(1);  // unk - is_ready ?
                     writer.WriteValue(_user.gender);
                     writer.WriteValue(_user.mobil);
                     writer.WriteStartArray();
@@ -115,9 +127,9 @@ namespace GameServerDB.ChanelManager
                     writer.WriteValue(_user.foreground);
                     writer.WriteValue(_user.background);
                     writer.WriteEndArray();
+                    writer.WriteValue(0);  // unk - is_bot ?
+                    writer.WriteValue(0);  // unk - power_user ?
                 }
-                writer.WriteValue(0);
-                writer.WriteValue(0);
                 writer.WriteEndArray();
                 writer.WriteEndArray();
             }
