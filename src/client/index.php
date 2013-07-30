@@ -1600,8 +1600,7 @@
                     </div>
                   </div>
                 </div>
-              </div>
-              <div class="screen NoSelect" id="shopScreen">
+                <div class="screen NoSelect" id="shopScreen">
                 <div id="shopOverly">
                   <div id="shopTitle" class="blackShadow NoSelect">
                     Items Shop
@@ -2454,6 +2453,7 @@
                   <div id="buy_cancel_btn" class="opacity_button shopButton">
                   </div>
                 </div>
+              </div>
               </div>
               </div>
             </body>
