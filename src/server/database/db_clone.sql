@@ -10,7 +10,7 @@ Target Server Type    : MYSQL
 Target Server Version : 50508
 File Encoding         : 65001
 
-Date: 2013-07-30 20:05:15
+Date: 2013-07-30 23:27:56
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -836,7 +836,7 @@ CREATE TABLE `users` (
 -- ----------------------------
 -- Records of users
 -- ----------------------------
-INSERT INTO `users` VALUES ('1', 'CarlosX', '688bafc7eb1846d822f8', '24', '29', '93523', '99989', '0', 'm', '9999', '0', '100000014337670', '1', '0');
+INSERT INTO `users` VALUES ('1', 'CarlosX', '688bafc7eb1846d822f8', '24', '29', '46523', '99989', '0', 'm', '9999', '0', '100000014337670', '1', '0');
 
 -- ----------------------------
 -- Table structure for `user_items`
@@ -851,9 +851,13 @@ CREATE TABLE `user_items` (
   `expira` datetime DEFAULT NULL,
   `id_user` int(10) DEFAULT NULL,
   PRIMARY KEY (`no`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
 
 -- ----------------------------
 -- Records of user_items
 -- ----------------------------
 INSERT INTO `user_items` VALUES ('1', '800', '1', 'g', '2', '0000-00-00 00:00:00', '1');
+INSERT INTO `user_items` VALUES ('2', '815', '1', 'g', '2', '0000-00-00 00:00:00', '1');
+INSERT INTO `user_items` VALUES ('3', '589', '1', 'g', '0', '0000-00-00 00:00:00', '1');
+INSERT INTO `user_items` VALUES ('4', '761', '1', 'g', '0', '0000-00-00 00:00:00', '1');
+INSERT INTO `user_items` VALUES ('5', '541', '1', 'g', '0', '0000-00-00 00:00:00', '1');
