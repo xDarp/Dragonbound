@@ -10,7 +10,7 @@ Target Server Type    : MYSQL
 Target Server Version : 50508
 File Encoding         : 65001
 
-Date: 2013-07-17 01:17:02
+Date: 2013-07-30 20:05:15
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -24,7 +24,7 @@ CREATE TABLE `amigos` (
   `id_yo` int(11) NOT NULL,
   `id_amigo` int(11) NOT NULL,
   KEY `id` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- ----------------------------
 -- Records of amigos
@@ -56,15 +56,15 @@ CREATE TABLE `items` (
   `parte` char(2) DEFAULT NULL,
   `nombre` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=505 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=816 DEFAULT CHARSET=latin1;
 
 -- ----------------------------
 -- Records of items
 -- ----------------------------
-INSERT INTO `items` VALUES ('1', '1', 'm', 'h', 'STANDARD');
-INSERT INTO `items` VALUES ('2', '2', 'm', 'b', 'STANDARD');
-INSERT INTO `items` VALUES ('3', '3', 'f', 'h', 'STANDARD');
-INSERT INTO `items` VALUES ('4', '4', 'f', 'b', 'STANDARD');
+INSERT INTO `items` VALUES ('1', '1', 'm', 'h', 'Default');
+INSERT INTO `items` VALUES ('2', '2', 'm', 'b', 'Default');
+INSERT INTO `items` VALUES ('3', '3', 'f', 'h', 'Default');
+INSERT INTO `items` VALUES ('4', '4', 'f', 'b', 'Default');
 INSERT INTO `items` VALUES ('5', '5', 'm', 'h', 'Space Marine');
 INSERT INTO `items` VALUES ('6', '6', 'm', 'h', '(RARE) Soccer Hat');
 INSERT INTO `items` VALUES ('7', '7', 'm', 'h', 'Cowboy Hat');
@@ -177,7 +177,7 @@ INSERT INTO `items` VALUES ('113', '113', 'm', 'f', 'Fish Spear');
 INSERT INTO `items` VALUES ('114', '114', 'm', 'f', 'Card Man');
 INSERT INTO `items` VALUES ('115', '115', 'm', 'f', 'Bikini Tube 1');
 INSERT INTO `items` VALUES ('116', '116', 'm', 'f', 'Bikini Tube 2');
-INSERT INTO `items` VALUES ('117', '117', 'm', 'f', '(RARE) Easter Chicke');
+INSERT INTO `items` VALUES ('117', '117', 'a', 'f', '(RARE) Easter Chicke');
 INSERT INTO `items` VALUES ('118', '118', 'm', 'f', '(RARE) WOWLG');
 INSERT INTO `items` VALUES ('119', '119', 'm', 'f', 'Fortune');
 INSERT INTO `items` VALUES ('120', '120', 'm', 'f', 'X-mas Tree');
@@ -258,7 +258,6 @@ INSERT INTO `items` VALUES ('194', '194', 'm', 'h', 'Celestial Warrior');
 INSERT INTO `items` VALUES ('195', '195', 'm', 'h', 'Ent Warrior');
 INSERT INTO `items` VALUES ('196', '196', 'm', 'h', 'Cleric');
 INSERT INTO `items` VALUES ('197', '197', 'm', 'h', 'GM');
-INSERT INTO `items` VALUES ('198', '198', 'm', 'h', 'Cute GunBound Dragon');
 INSERT INTO `items` VALUES ('199', '199', 'f', 'h', 'Flower Pin');
 INSERT INTO `items` VALUES ('200', '200', 'f', 'h', 'Pirate Hat');
 INSERT INTO `items` VALUES ('201', '201', 'f', 'h', 'Pucca Hair');
@@ -388,7 +387,6 @@ INSERT INTO `items` VALUES ('324', '324', 'm', 'b', 'Love Cupid');
 INSERT INTO `items` VALUES ('325', '325', 'm', 'b', 'Honey Bee');
 INSERT INTO `items` VALUES ('326', '326', 'm', 'b', '(RARE) Easter Bunny');
 INSERT INTO `items` VALUES ('327', '327', 'm', 'b', 'GM');
-INSERT INTO `items` VALUES ('328', '328', 'm', 'b', 'Cute GunBound Dragon');
 INSERT INTO `items` VALUES ('329', '329', 'f', 'b', '(RARE) Friendship A');
 INSERT INTO `items` VALUES ('330', '330', 'f', 'b', 'Rocker Suit');
 INSERT INTO `items` VALUES ('331', '331', 'f', 'b', 'Kendo Uniform');
@@ -446,7 +444,6 @@ INSERT INTO `items` VALUES ('382', '382', 'f', 'b', '(RARE) Easter Bunny');
 INSERT INTO `items` VALUES ('383', '383', 'f', 'b', 'Cheap N Lookin Good ');
 INSERT INTO `items` VALUES ('384', '384', 'f', 'b', 'Cheap N Lookin Good ');
 INSERT INTO `items` VALUES ('385', '385', 'm', 'f', 'GM');
-INSERT INTO `items` VALUES ('386', '386', 'm', 'f', 'Symbol of GM');
 INSERT INTO `items` VALUES ('387', '387', 'm', 'f', 'Facebook');
 INSERT INTO `items` VALUES ('388', '388', 'm', 'f', '(RARE) Beta Flag');
 INSERT INTO `items` VALUES ('389', '389', 'a', '1', 'Magic Circle');
@@ -454,11 +451,10 @@ INSERT INTO `items` VALUES ('390', '390', 'a', '1', 'Cave');
 INSERT INTO `items` VALUES ('391', '391', 'a', '1', 'Green Field');
 INSERT INTO `items` VALUES ('392', '392', 'a', '1', 'Witch Village');
 INSERT INTO `items` VALUES ('393', '393', 'a', '1', '(RARE) XMAS');
-INSERT INTO `items` VALUES ('394', '394', 'a', '1', 'Money Wall Paper');
+INSERT INTO `items` VALUES ('394', '394', 'a', '1', '(RARE) Cash Charger ');
 INSERT INTO `items` VALUES ('395', '395', 'a', '1', 'Igloo');
 INSERT INTO `items` VALUES ('396', '396', 'a', '1', 'Force');
 INSERT INTO `items` VALUES ('397', '397', 'a', '1', '(RARE) XMAS Sky');
-INSERT INTO `items` VALUES ('398', '398', 'a', '1', '(RARE) Champion');
 INSERT INTO `items` VALUES ('399', '399', 'a', '1', '(RARE) XMAS Santa');
 INSERT INTO `items` VALUES ('400', '400', 'a', '1', 'Holy Night');
 INSERT INTO `items` VALUES ('401', '401', 'a', '1', 'Sunset');
@@ -487,7 +483,7 @@ INSERT INTO `items` VALUES ('423', '423', 'a', '2', 'Larva');
 INSERT INTO `items` VALUES ('424', '424', 'a', '2', 'Rose');
 INSERT INTO `items` VALUES ('425', '425', 'a', '2', '(RARE) Pumpkin');
 INSERT INTO `items` VALUES ('426', '426', 'a', '2', 'Snoman');
-INSERT INTO `items` VALUES ('427', '427', 'a', '2', '(RARE) Cash Charger');
+INSERT INTO `items` VALUES ('427', '427', 'a', '2', '(RARE) Cash Charger ');
 INSERT INTO `items` VALUES ('428', '428', 'a', '2', 'Heart');
 INSERT INTO `items` VALUES ('429', '429', 'a', '2', 'Fireworks');
 INSERT INTO `items` VALUES ('430', '430', 'a', '2', 'Lightning');
@@ -526,15 +522,14 @@ INSERT INTO `items` VALUES ('462', '462', 'f', 'g', 'Frozen Warrior');
 INSERT INTO `items` VALUES ('463', '463', 'm', 'f', 'Frozen Warrior');
 INSERT INTO `items` VALUES ('464', '464', 'a', 'x', 'Power User');
 INSERT INTO `items` VALUES ('465', '465', 'a', '1', 'Power User');
-INSERT INTO `items` VALUES ('466', '466', 'a', '1', 'Falling Stars');
-INSERT INTO `items` VALUES ('467', '467', 'a', '1', 'Luffy');
-INSERT INTO `items` VALUES ('468', '468', 'a', '1', 'Green Stars');
+INSERT INTO `items` VALUES ('466', '466', 'a', '1', '(RARE) Falling Stars');
+INSERT INTO `items` VALUES ('468', '468', 'a', '1', '(RARE) Green Stars');
 INSERT INTO `items` VALUES ('469', '469', 'a', '1', '(RARE) Dubstep');
 INSERT INTO `items` VALUES ('470', '470', 'm', 'h', 'Snow Devil Head');
-INSERT INTO `items` VALUES ('471', '471', 'm', 'h', '(SET) Luffys Head');
-INSERT INTO `items` VALUES ('472', '472', 'm', 'b', '(SET) Luffys Body');
-INSERT INTO `items` VALUES ('473', '473', 'a', 'f', '(SET) Luffys Flag');
-INSERT INTO `items` VALUES ('474', '474', 'a', '1', '(SET) Luffys BG');
+INSERT INTO `items` VALUES ('471', '471', 'm', 'h', '(SET) Luffy\'s Head');
+INSERT INTO `items` VALUES ('472', '472', 'm', 'b', '(SET) Luffy\'s Body');
+INSERT INTO `items` VALUES ('473', '473', 'a', 'f', '(SET) Luffy\'s Flag');
+INSERT INTO `items` VALUES ('474', '474', 'a', '1', '(SET) Luffy\'s BG');
 INSERT INTO `items` VALUES ('475', '475', 'a', '1', 'Peru');
 INSERT INTO `items` VALUES ('476', '476', 'a', 'g', 'Blue Phoenix');
 INSERT INTO `items` VALUES ('477', '477', 'a', 'g', 'Skull Staff');
@@ -556,15 +551,265 @@ INSERT INTO `items` VALUES ('492', '492', 'a', '1', 'Machu Picchu');
 INSERT INTO `items` VALUES ('493', '493', 'a', '1', 'Plane');
 INSERT INTO `items` VALUES ('494', '494', 'm', 'b', 'Snow Devil Body');
 INSERT INTO `items` VALUES ('495', '495', 'a', '1', 'BabolaT');
-INSERT INTO `items` VALUES ('496', '496', 'a', 'g', '(SET) Luffys Scar');
-INSERT INTO `items` VALUES ('497', '497', 'a', '2', '(SET) Luffys Meat');
+INSERT INTO `items` VALUES ('496', '496', 'a', 'g', '(SET) Luffy\'s Scar');
+INSERT INTO `items` VALUES ('497', '497', 'a', '2', '(SET) Luffy\'s Meat');
 INSERT INTO `items` VALUES ('498', '498', 'f', 'h', 'Pink Devil Head');
 INSERT INTO `items` VALUES ('499', '499', 'a', 'f', 'Love Monkey');
 INSERT INTO `items` VALUES ('500', '500', 'f', 'b', 'Pink Devil Body');
 INSERT INTO `items` VALUES ('501', '501', 'a', '1', 'United Kingdom');
-INSERT INTO `items` VALUES ('502', '502', 'a', '1', 'Equalizer');
-INSERT INTO `items` VALUES ('503', '503', 'a', '1', 'Slend');
-INSERT INTO `items` VALUES ('504', '504', 'a', '1', 'Slender');
+INSERT INTO `items` VALUES ('502', '502', 'a', '1', '(RARE) Equalizer');
+INSERT INTO `items` VALUES ('503', '503', 'a', '1', '(RARE) Slend');
+INSERT INTO `items` VALUES ('504', '504', 'a', '1', '(RARE) Slender');
+INSERT INTO `items` VALUES ('505', '505', 'a', 'f', 'Zombie Pirate');
+INSERT INTO `items` VALUES ('506', '506', 'a', '1', 'Rocker Boy');
+INSERT INTO `items` VALUES ('507', '507', 'a', '2', 'Rocker Boy');
+INSERT INTO `items` VALUES ('508', '508', 'a', 'f', 'Rocker Boy');
+INSERT INTO `items` VALUES ('509', '509', 'a', 'f', 'Pala');
+INSERT INTO `items` VALUES ('510', '510', 'a', 'f', 'Dragon Murk');
+INSERT INTO `items` VALUES ('514', '514', 'a', '1', 'Arrow');
+INSERT INTO `items` VALUES ('515', '515', 'a', '1', 'Night Thunder');
+INSERT INTO `items` VALUES ('516', '516', 'a', '1', 'White Force');
+INSERT INTO `items` VALUES ('517', '517', 'a', '1', 'Summer');
+INSERT INTO `items` VALUES ('518', '518', 'a', '1', 'Rave');
+INSERT INTO `items` VALUES ('519', '519', 'a', 'f', 'Gift');
+INSERT INTO `items` VALUES ('520', '520', 'a', 'f', 'Shenlong');
+INSERT INTO `items` VALUES ('521', '521', 'm', 'g', 'Legendary Phoenix');
+INSERT INTO `items` VALUES ('522', '522', 'f', 'g', 'Legendary Phoenix');
+INSERT INTO `items` VALUES ('523', '523', 'a', '1', 'Cosmo');
+INSERT INTO `items` VALUES ('524', '524', 'a', '1', 'Ifrit');
+INSERT INTO `items` VALUES ('525', '525', 'f', 'b', 'Dark Witch');
+INSERT INTO `items` VALUES ('526', '526', 'f', 'h', 'Dark Witch');
+INSERT INTO `items` VALUES ('527', '527', 'a', '1', 'Blue Force');
+INSERT INTO `items` VALUES ('528', '528', 'a', '2', 'Stereo');
+INSERT INTO `items` VALUES ('529', '529', 'a', '2', 'Cham Kyuubi');
+INSERT INTO `items` VALUES ('530', '530', 'a', '1', 'Milotic');
+INSERT INTO `items` VALUES ('531', '531', 'a', '1', 'Barcelona');
+INSERT INTO `items` VALUES ('532', '532', 'a', '1', 'Real Madrid');
+INSERT INTO `items` VALUES ('533', '533', 'a', '1', 'Poker');
+INSERT INTO `items` VALUES ('534', '534', 'a', '1', 'Angry Birds');
+INSERT INTO `items` VALUES ('535', '535', 'a', 'g', 'D-Balls');
+INSERT INTO `items` VALUES ('536', '536', 'a', '1', 'Chelsea');
+INSERT INTO `items` VALUES ('537', '537', 'f', 'h', '(SET) Vane-moon');
+INSERT INTO `items` VALUES ('538', '538', 'f', 'b', '(SET) Vane-moon');
+INSERT INTO `items` VALUES ('539', '539', 'a', 'g', '(SET) Vane-moon');
+INSERT INTO `items` VALUES ('540', '540', 'a', 'f', '(SET) Vane-moon');
+INSERT INTO `items` VALUES ('541', '541', 'a', '2', 'Shin Chan');
+INSERT INTO `items` VALUES ('542', '542', 'a', '1', 'Nyan Cat');
+INSERT INTO `items` VALUES ('543', '543', 'm', 'h', '(SET) Goku');
+INSERT INTO `items` VALUES ('544', '544', 'm', 'b', '(SET) Goku');
+INSERT INTO `items` VALUES ('545', '545', 'a', 'g', '(SET) Goku');
+INSERT INTO `items` VALUES ('546', '546', 'a', 'f', '(SET) Goku');
+INSERT INTO `items` VALUES ('547', '547', 'a', '1', '(SET) Goku');
+INSERT INTO `items` VALUES ('548', '548', 'a', '1', 'Stellar Space');
+INSERT INTO `items` VALUES ('549', '549', 'm', 'h', '(SET) Desert CVT');
+INSERT INTO `items` VALUES ('550', '550', 'm', 'b', '(SET) Desert CVT');
+INSERT INTO `items` VALUES ('551', '551', 'a', 'g', '(SET) Desert CVT');
+INSERT INTO `items` VALUES ('552', '552', 'a', 'f', '(SET) Desert CVT');
+INSERT INTO `items` VALUES ('553', '553', 'a', '2', '(SET) Desert CVT');
+INSERT INTO `items` VALUES ('554', '554', 'a', '1', '(SET) Desert CVT');
+INSERT INTO `items` VALUES ('555', '555', 'a', 'g', 'Green Phoenix');
+INSERT INTO `items` VALUES ('556', '556', 'a', '1', '(RARE) Mustang');
+INSERT INTO `items` VALUES ('557', '557', 'a', '1', 'Moon');
+INSERT INTO `items` VALUES ('558', '558', 'a', 'g', '(RARE) Pokeball');
+INSERT INTO `items` VALUES ('559', '559', 'm', 'h', '(RARE) (SET) Ash');
+INSERT INTO `items` VALUES ('560', '560', 'm', 'b', '(RARE) (SET) Ash');
+INSERT INTO `items` VALUES ('561', '561', 'a', 'f', '(RARE) Pika');
+INSERT INTO `items` VALUES ('562', '562', 'a', '1', 'Pokemon');
+INSERT INTO `items` VALUES ('563', '563', 'a', 'f', 'Kitten Cloud');
+INSERT INTO `items` VALUES ('564', '564', 'a', '1', '(RARE) Green Archers');
+INSERT INTO `items` VALUES ('565', '565', 'a', 'f', 'Charmander');
+INSERT INTO `items` VALUES ('566', '566', 'a', '1', 'Blue Gona');
+INSERT INTO `items` VALUES ('567', '567', 'm', 'h', '(SET) Naturo');
+INSERT INTO `items` VALUES ('568', '568', 'm', 'b', '(SET) Naturo');
+INSERT INTO `items` VALUES ('569', '569', 'a', 'g', '(SET) Naturo');
+INSERT INTO `items` VALUES ('570', '570', 'a', 'f', '(SET) Naturo');
+INSERT INTO `items` VALUES ('571', '571', 'a', '1', '(SET) Naturo');
+INSERT INTO `items` VALUES ('572', '572', 'a', '2', '(SET) Naturo');
+INSERT INTO `items` VALUES ('573', '573', 'f', 'h', '(SET) Sakura');
+INSERT INTO `items` VALUES ('574', '574', 'f', 'b', '(SET) Sakura');
+INSERT INTO `items` VALUES ('575', '575', 'a', 'g', '(SET) Sakura');
+INSERT INTO `items` VALUES ('576', '576', 'a', 'f', '(SET) Sakura');
+INSERT INTO `items` VALUES ('577', '577', 'a', '2', '(SET) Sakura');
+INSERT INTO `items` VALUES ('578', '578', 'a', '1', '(SET) Sakura');
+INSERT INTO `items` VALUES ('579', '579', 'm', 'h', '(SET) Kartoz');
+INSERT INTO `items` VALUES ('580', '580', 'm', 'b', '(SET) Kartoz');
+INSERT INTO `items` VALUES ('581', '581', 'a', 'g', '(SET) Kartoz');
+INSERT INTO `items` VALUES ('582', '582', 'a', 'f', '(SET) Kartoz');
+INSERT INTO `items` VALUES ('583', '583', 'a', '1', 'Hearts Day');
+INSERT INTO `items` VALUES ('584', '584', 'a', '1', 'Valentines');
+INSERT INTO `items` VALUES ('586', '586', 'a', '1', '(RARE) Pilot');
+INSERT INTO `items` VALUES ('587', '587', 'a', '1', 'Stripes');
+INSERT INTO `items` VALUES ('588', '588', 'a', '1', 'Toxic');
+INSERT INTO `items` VALUES ('589', '589', 'a', '1', 'Dolanpls');
+INSERT INTO `items` VALUES ('601', '601', 'a', '1', '(RARE) Thunder');
+INSERT INTO `items` VALUES ('602', '602', 'a', '1', 'Colors');
+INSERT INTO `items` VALUES ('604', '604', 'm', 'h', '(SET) Thanatos');
+INSERT INTO `items` VALUES ('605', '605', 'm', 'b', '(SET) Thanatos');
+INSERT INTO `items` VALUES ('606', '606', 'a', 'f', '(SET) Thanatos');
+INSERT INTO `items` VALUES ('607', '607', 'a', 'g', 'Black Phoenix');
+INSERT INTO `items` VALUES ('608', '608', 'f', 'h', '(SET) Rylai');
+INSERT INTO `items` VALUES ('609', '609', 'f', 'b', '(SET) Rylai');
+INSERT INTO `items` VALUES ('610', '610', 'a', 'g', '(SET) Rylai');
+INSERT INTO `items` VALUES ('611', '611', 'a', 'f', '(SET) Rylai');
+INSERT INTO `items` VALUES ('612', '612', 'a', 'g', 'Dark Magic');
+INSERT INTO `items` VALUES ('613', '613', 'a', 'f', 'Dark Magic');
+INSERT INTO `items` VALUES ('615', '615', 'a', '1', 'Kame Hame');
+INSERT INTO `items` VALUES ('616', '616', 'a', '2', '(RARE) You Love Me');
+INSERT INTO `items` VALUES ('617', '617', 'a', '1', '(RARE) Floating Hear');
+INSERT INTO `items` VALUES ('618', '618', 'f', 'h', '(SET) Sakura Card Ca');
+INSERT INTO `items` VALUES ('619', '619', 'f', 'b', '(SET) Sakura Card Ca');
+INSERT INTO `items` VALUES ('620', '620', 'a', 'g', '(SET) Sakura Card Ca');
+INSERT INTO `items` VALUES ('621', '621', 'a', 'f', '(SET) Sakura Card Ca');
+INSERT INTO `items` VALUES ('622', '622', 'a', '1', '(SET) Sakura Card Ca');
+INSERT INTO `items` VALUES ('623', '623', 'm', 'h', 'Mummy');
+INSERT INTO `items` VALUES ('624', '624', 'm', 'b', 'Mummy');
+INSERT INTO `items` VALUES ('625', '625', 'a', 'f', 'Mummy');
+INSERT INTO `items` VALUES ('626', '626', 'm', 'h', '(SET) Death Note');
+INSERT INTO `items` VALUES ('627', '627', 'm', 'b', '(SET) Death Note');
+INSERT INTO `items` VALUES ('628', '628', 'm', 'h', '(SET) Death Note 2');
+INSERT INTO `items` VALUES ('629', '629', 'm', 'b', '(SET) Death Note 2');
+INSERT INTO `items` VALUES ('632', '632', 'f', 'h', '(SET) Witch');
+INSERT INTO `items` VALUES ('633', '633', 'f', 'b', '(SET) Witch');
+INSERT INTO `items` VALUES ('634', '634', 'a', 'f', '(SET) Witch');
+INSERT INTO `items` VALUES ('635', '635', 'm', 'h', '(SET) Paul');
+INSERT INTO `items` VALUES ('636', '636', 'm', 'b', '(SET) Paul');
+INSERT INTO `items` VALUES ('637', '637', 'a', 'g', '(SET) Paul');
+INSERT INTO `items` VALUES ('638', '638', 'a', 'f', '(SET) Paul');
+INSERT INTO `items` VALUES ('639', '639', 'm', 'h', '(SET) Natzu');
+INSERT INTO `items` VALUES ('640', '640', 'm', 'b', '(SET) Natzu');
+INSERT INTO `items` VALUES ('641', '641', 'a', 'g', '(SET) Natzu');
+INSERT INTO `items` VALUES ('642', '642', 'a', 'f', '(SET) Natzu');
+INSERT INTO `items` VALUES ('643', '643', 'a', '1', '(SET) Natzu');
+INSERT INTO `items` VALUES ('654', '654', 'f', 'h', '(SET) Shaman King');
+INSERT INTO `items` VALUES ('655', '655', 'f', 'b', '(SET) Shaman King');
+INSERT INTO `items` VALUES ('656', '656', 'a', 'g', '(SET) Shaman King');
+INSERT INTO `items` VALUES ('657', '657', 'a', 'f', '(SET) Shaman King');
+INSERT INTO `items` VALUES ('658', '658', 'm', 'h', '(SET) Shaman King');
+INSERT INTO `items` VALUES ('659', '659', 'm', 'b', '(SET) Shaman King');
+INSERT INTO `items` VALUES ('660', '660', 'a', 'g', '(SET) Shaman King');
+INSERT INTO `items` VALUES ('661', '661', 'a', 'f', '(SET) Shaman King');
+INSERT INTO `items` VALUES ('662', '662', 'a', '1', '(SET) Shaman King');
+INSERT INTO `items` VALUES ('663', '663', 'a', '2', '(SET) Shaman King');
+INSERT INTO `items` VALUES ('666', '666', 'm', 'h', '(SET) YuGiOh');
+INSERT INTO `items` VALUES ('667', '667', 'm', 'b', '(SET) YuGiOh');
+INSERT INTO `items` VALUES ('668', '668', 'a', 'g', '(SET) YuGiOh');
+INSERT INTO `items` VALUES ('669', '669', 'a', 'f', '(SET) YuGiOh');
+INSERT INTO `items` VALUES ('670', '670', 'a', '1', '(SET) YuGiOh');
+INSERT INTO `items` VALUES ('671', '671', 'm', 'h', 'Romeo');
+INSERT INTO `items` VALUES ('672', '672', 'm', 'b', 'Romeo');
+INSERT INTO `items` VALUES ('673', '673', 'f', 'b', 'Juliet');
+INSERT INTO `items` VALUES ('674', '674', 'f', 'h', 'Juliet');
+INSERT INTO `items` VALUES ('676', '676', 'a', '1', '(RARE) Tree');
+INSERT INTO `items` VALUES ('677', '677', 'a', '1', '(RARE) Time Travel');
+INSERT INTO `items` VALUES ('678', '678', 'm', 'h', 'Anderson Silva');
+INSERT INTO `items` VALUES ('679', '679', 'm', 'b', 'Anderson Silva');
+INSERT INTO `items` VALUES ('680', '680', 'm', 'h', '(SET) Inazuma Eleven');
+INSERT INTO `items` VALUES ('681', '681', 'm', 'b', '(SET) Inazuma Eleven');
+INSERT INTO `items` VALUES ('682', '682', 'a', 'f', '(SET) Inazuma Eleven');
+INSERT INTO `items` VALUES ('683', '683', 'a', '2', '(SET) Inazuma Eleven');
+INSERT INTO `items` VALUES ('684', '684', 'a', '1', '(SET) Inazuma Eleven');
+INSERT INTO `items` VALUES ('685', '685', 'm', 'h', 'Bart Simpson');
+INSERT INTO `items` VALUES ('686', '686', 'm', 'b', 'Bart Simpson');
+INSERT INTO `items` VALUES ('687', '687', 'm', 'h', 'Bob Marley');
+INSERT INTO `items` VALUES ('688', '688', 'm', 'b', 'Bob Marley');
+INSERT INTO `items` VALUES ('689', '689', 'a', '1', 'Bob Marley');
+INSERT INTO `items` VALUES ('690', '690', 'f', 'h', 'Hinata');
+INSERT INTO `items` VALUES ('691', '691', 'f', 'b', 'Hinata');
+INSERT INTO `items` VALUES ('692', '692', 'm', 'h', 'Luan Santana');
+INSERT INTO `items` VALUES ('693', '693', 'm', 'b', 'Luan Santana');
+INSERT INTO `items` VALUES ('694', '694', 'a', '1', 'Luan Santana');
+INSERT INTO `items` VALUES ('695', '695', 'm', 'h', 'Racer');
+INSERT INTO `items` VALUES ('696', '696', 'm', 'b', 'Racer');
+INSERT INTO `items` VALUES ('697', '697', 'm', 'h', 'Saint Seya');
+INSERT INTO `items` VALUES ('698', '698', 'm', 'b', 'Saint Seya');
+INSERT INTO `items` VALUES ('699', '699', 'a', '1', 'Saint Seya');
+INSERT INTO `items` VALUES ('700', '700', 'a', '1', 'Alianza Lima');
+INSERT INTO `items` VALUES ('701', '701', 'a', '1', 'Sporting Cristal');
+INSERT INTO `items` VALUES ('702', '702', 'a', '1', 'Universitario');
+INSERT INTO `items` VALUES ('704', '704', 'a', '2', '(SET) YuGiOh');
+INSERT INTO `items` VALUES ('729', '729', 'f', 'h', '(RARE) Invisible');
+INSERT INTO `items` VALUES ('730', '730', 'f', 'b', '(RARE) Invisible');
+INSERT INTO `items` VALUES ('731', '731', 'a', 'b', 'Angel');
+INSERT INTO `items` VALUES ('732', '732', 'a', 'h', 'Angel');
+INSERT INTO `items` VALUES ('733', '733', 'm', 'h', 'Yoshiken');
+INSERT INTO `items` VALUES ('734', '734', 'm', 'b', 'Yoshiken');
+INSERT INTO `items` VALUES ('735', '735', 'm', 'h', 'DJ Rapper');
+INSERT INTO `items` VALUES ('736', '736', 'm', 'b', 'DJ Rapper');
+INSERT INTO `items` VALUES ('737', '737', 'm', 'h', 'Turtle Hat');
+INSERT INTO `items` VALUES ('738', '738', 'm', 'b', 'Turtle Body');
+INSERT INTO `items` VALUES ('739', '739', 'm', 'b', 'Deamonic Body');
+INSERT INTO `items` VALUES ('740', '740', 'm', 'h', 'Deamonic Hat');
+INSERT INTO `items` VALUES ('741', '741', 'm', 'h', 'Bone Man');
+INSERT INTO `items` VALUES ('742', '742', 'm', 'b', 'Bone Man');
+INSERT INTO `items` VALUES ('743', '743', 'm', 'h', 'Eros');
+INSERT INTO `items` VALUES ('744', '744', 'm', 'b', 'Eros');
+INSERT INTO `items` VALUES ('745', '745', 'm', 'b', 'Thor\'s Wealth');
+INSERT INTO `items` VALUES ('746', '746', 'm', 'h', 'Thor\'s Wealth');
+INSERT INTO `items` VALUES ('747', '747', 'm', 'h', 'Hiphop Flamer Body');
+INSERT INTO `items` VALUES ('748', '748', 'm', 'b', 'Hiphop Flamer Body');
+INSERT INTO `items` VALUES ('749', '749', 'm', 'h', 'Nyx Abyss');
+INSERT INTO `items` VALUES ('750', '750', 'm', 'b', 'Nyx Abyss');
+INSERT INTO `items` VALUES ('751', '751', 'm', 'h', 'Cannon');
+INSERT INTO `items` VALUES ('752', '752', 'm', 'b', 'Cannon');
+INSERT INTO `items` VALUES ('753', '753', 'm', 'b', 'Army Private Body');
+INSERT INTO `items` VALUES ('754', '754', 'm', 'h', 'Army Private Hat');
+INSERT INTO `items` VALUES ('757', '757', 'm', 'h', 'African Boy');
+INSERT INTO `items` VALUES ('758', '758', 'm', 'b', 'African Boy');
+INSERT INTO `items` VALUES ('759', '759', 'm', 'h', 'Celtic Warrior');
+INSERT INTO `items` VALUES ('760', '760', 'm', 'b', 'Celtic Warrior');
+INSERT INTO `items` VALUES ('761', '761', 'a', 'f', 'Ola Ke Ase');
+INSERT INTO `items` VALUES ('762', '762', 'm', 'h', 'Gaucho Hat');
+INSERT INTO `items` VALUES ('763', '763', 'm', 'b', 'Gaucho Body');
+INSERT INTO `items` VALUES ('764', '764', 'a', 'f', 'Dragon Glass');
+INSERT INTO `items` VALUES ('765', '765', 'a', 'f', 'Dragon Thunder');
+INSERT INTO `items` VALUES ('766', '766', 'm', 'b', 'Roman Executioner');
+INSERT INTO `items` VALUES ('767', '767', 'm', 'h', 'Roman Executioner');
+INSERT INTO `items` VALUES ('768', '768', 'm', 'b', 'Mutant');
+INSERT INTO `items` VALUES ('769', '769', 'm', 'h', 'Mutant');
+INSERT INTO `items` VALUES ('770', '770', 'm', 'h', 'Toilet Hat');
+INSERT INTO `items` VALUES ('771', '771', 'm', 'b', 'Toilet Body');
+INSERT INTO `items` VALUES ('772', '772', 'a', 'h', 'Team Force');
+INSERT INTO `items` VALUES ('773', '773', 'a', 'b', 'Team Force');
+INSERT INTO `items` VALUES ('774', '774', 'a', 'g', 'Dragon Sword');
+INSERT INTO `items` VALUES ('775', '775', 'a', 'f', 'Horse Shadow');
+INSERT INTO `items` VALUES ('776', '776', 'a', 'f', 'Inner Strength');
+INSERT INTO `items` VALUES ('777', '777', 'a', 'f', 'Butterfly');
+INSERT INTO `items` VALUES ('778', '778', 'a', 'g', 'Sword Warrior');
+INSERT INTO `items` VALUES ('781', '781', 'f', 'h', 'Deamonic Hat');
+INSERT INTO `items` VALUES ('782', '782', 'f', 'b', 'Deamonic Body');
+INSERT INTO `items` VALUES ('783', '783', 'f', 'h', 'Roman Executioner');
+INSERT INTO `items` VALUES ('784', '784', 'f', 'b', 'Roman Executioner');
+INSERT INTO `items` VALUES ('785', '785', 'a', 'b', 'Space Adventurer');
+INSERT INTO `items` VALUES ('786', '786', 'a', 'h', 'Space Adventurer');
+INSERT INTO `items` VALUES ('787', '787', 'f', 'h', 'Tonkserverus');
+INSERT INTO `items` VALUES ('788', '788', 'f', 'b', 'Tonkserverus');
+INSERT INTO `items` VALUES ('789', '789', 'f', 'b', 'Nyx Beth');
+INSERT INTO `items` VALUES ('790', '790', 'f', 'h', 'Nyx Beth');
+INSERT INTO `items` VALUES ('791', '791', 'a', 'g', 'Stressed Z');
+INSERT INTO `items` VALUES ('792', '792', 'm', 'b', 'Cow Boy');
+INSERT INTO `items` VALUES ('793', '793', 'm', 'h', 'Cow Boy');
+INSERT INTO `items` VALUES ('794', '794', 'm', 'h', 'Demon Boy');
+INSERT INTO `items` VALUES ('795', '795', 'm', 'b', 'Demon Boy');
+INSERT INTO `items` VALUES ('796', '796', 'a', 'f', 'Cow Flag');
+INSERT INTO `items` VALUES ('797', '797', 'm', 'h', 'Afro 80');
+INSERT INTO `items` VALUES ('798', '798', 'm', 'b', 'Afro 80');
+INSERT INTO `items` VALUES ('799', '799', 'm', 'b', 'DragonPower');
+INSERT INTO `items` VALUES ('800', '800', 'm', 'h', 'DragonPower');
+INSERT INTO `items` VALUES ('801', '801', 'a', 'g', 'Guitar');
+INSERT INTO `items` VALUES ('802', '802', 'a', 'g', 'Sword Laser');
+INSERT INTO `items` VALUES ('803', '803', 'a', 'g', 'Nebula');
+INSERT INTO `items` VALUES ('804', '804', 'f', 'b', 'Cow Woman');
+INSERT INTO `items` VALUES ('805', '805', 'f', 'h', 'Cow Woman');
+INSERT INTO `items` VALUES ('806', '806', 'f', 'h', 'PinkPower');
+INSERT INTO `items` VALUES ('807', '807', 'f', 'b', 'PinkPower');
+INSERT INTO `items` VALUES ('808', '808', 'a', 'g', 'Sun Cute');
+INSERT INTO `items` VALUES ('809', '809', 'a', 'g', 'Mega Power');
+INSERT INTO `items` VALUES ('810', '810', 'a', 'f', 'Chocobo');
+INSERT INTO `items` VALUES ('811', '811', 'a', 'f', 'Moon Red');
+INSERT INTO `items` VALUES ('812', '812', 'a', 'g', 'GM Sign');
+INSERT INTO `items` VALUES ('813', '813', 'a', 'f', 'Teddy Flag');
+INSERT INTO `items` VALUES ('814', '814', 'a', '1', '(RARE) Thunderbolt');
+INSERT INTO `items` VALUES ('815', '815', 'a', 'g', 'Fire Dragon');
 
 -- ----------------------------
 -- Table structure for `users`
@@ -586,12 +831,12 @@ CREATE TABLE `users` (
   `foto` int(5) DEFAULT '1',
   `baneado` smallint(5) DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
 
 -- ----------------------------
 -- Records of users
 -- ----------------------------
-INSERT INTO `users` VALUES ('1', 'CarlosX', '688bafc7eb1846d822f8', '24', '29', '99923', '99989', '0', 'm', '9999', '0', '100000014337670', '1', '0');
+INSERT INTO `users` VALUES ('1', 'CarlosX', '688bafc7eb1846d822f8', '24', '29', '93523', '99989', '0', 'm', '9999', '0', '100000014337670', '1', '0');
 
 -- ----------------------------
 -- Table structure for `user_items`
@@ -606,8 +851,9 @@ CREATE TABLE `user_items` (
   `expira` datetime DEFAULT NULL,
   `id_user` int(10) DEFAULT NULL,
   PRIMARY KEY (`no`)
-) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
 
 -- ----------------------------
 -- Records of user_items
 -- ----------------------------
+INSERT INTO `user_items` VALUES ('1', '800', '1', 'g', '2', '0000-00-00 00:00:00', '1');
